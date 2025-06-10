@@ -1,0 +1,192 @@
+version: 2.1
+
+# Define the orbs we'll use
+orbs:
+  gh: circleci/github-cli@2.2
+  terraform: circleci/terraform@3.6
+  aws-cli: circleci/aws-cli@5.4.0
+
+
+# Define pipeline parameters for API configuration
+parameters:
+  template_directory:
+    type: string
+    default: ""  # Must be provided via API
+    description: "Subdirectory within the template repo to use (e.g. frontend-templates, backend-templates)"
+  target_repo:
+    type: string
+    default: ""  # Must be provided via API
+    description: "Name of the new repository to create (will be created in CCI-Labs org)"
+  #because we use an AWS S3 bucket for TF State, we will use OIDC to get access to predefined IAM policy
+  aws-account-id:
+    type: string
+    default: "992382483259"
+  aws-pipeline-iam-prefix:
+    #used by pipeline as role, used by tf as role and policy name
+    type: string
+    default: cera-fe-pipeline
+  github_target_org:
+    type: string
+    default: CircleCI-Labs
+  circleci_target_org_id:
+    type: string
+    default: "41ced616-61aa-47b8-9bf9-b8ed52d0468a"
+  circleci_target_org_slug:
+    type: string
+    default: "circleci/98KhFjn8YyZY9qoBGmzCBs"
+  destroy_project:
+    type: boolean
+    default: false
+
+jobs:
+  clone-and-create-repo:
+    docker:
+      - image: cimg/base:stable
+    steps: 
+      - checkout
+      # Install and authenticate GitHub CLI using the orb
+      - gh/install
+      - gh/setup
+            
+      # Show available templates and selected template info
+      - run:
+          name: Show Template Info
+          command: |
+            echo "Available template directories:"
+            ls -la
+            echo ""
+            echo "Contents of selected template directory (<< pipeline.parameters.template_directory >>):"
+            cd << pipeline.parameters.template_directory >>
+            ls -la
+
+      # Create target repository
+      - run:
+          name: Create Target Repository
+          command: |
+            existing=`gh repo view  "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --json id --jq .id` || echo "Repo name available"
+            if [ -n "$existing" ];then
+              echo "Repository exists, skip creation"
+              circleci step halt
+              exit 0
+            fi
+            echo "Creating target repository..."
+            
+            # Create repository using GitHub CLI
+            gh repo create "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" \
+              --private \
+              --clone=false 
+            
+            echo "Repository created successfully"
+            
+            # Wait a moment for repository to be fully ready
+            echo "Waiting for repository to be ready..."
+            sleep 5
+
+      # Push template code to target repository
+      - run:
+          name: Debug Repository Information
+          command: |
+            echo "Target repository: << pipeline.parameters.target_repo >>"
+            echo "Checking if repository exists..."
+            gh repo view "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" || echo "Repository view failed"
+            echo "Testing repository access..."
+            git ls-remote https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>.git || echo "ls-remote failed"
+
+      - run:
+          name: Push Template Code to Target Repository
+          command: |
+            cd << pipeline.parameters.template_directory >>
+            
+            # Remove any existing git history
+            rm -rf .git
+            
+            # Initialize new git repository
+            git init
+            git config user.email "circleci@<<pipeline.parameters.github_target_org>>.com"
+            git config user.name "CircleCI Bot"
+            
+            # Add all files and make initial commit
+            git add .
+            git commit -m "Initial commit - created from << pipeline.parameters.template_directory >> template"
+            
+            # Add remote origin for target repository
+            git remote add origin https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>.git
+            
+            # Push to main branch
+            git branch -M main
+            git push -u origin main
+            
+            echo "Template code successfully pushed to <<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>"
+
+  configure-cci:
+    docker:
+      - image: cimg/deploy:2025.01.1
+    steps:
+      - checkout
+      - gh/install
+      - gh/setup
+      - setup-tf-vars
+      - terraform/apply:
+          backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
+          path: terraform/pipeline-terraform
+          var_file: app.tfvars 
+
+
+  destroy-cci-and-repo:
+    docker:
+      - image: cimg/deploy:2025.01.1
+    steps:
+      - checkout
+      - setup-tf-vars
+      - terraform/destroy:
+          backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
+          path: terraform/pipeline-terraform
+          var_file: app.tfvars 
+      - gh/install
+      - gh/setup
+      - run:
+          name: Delete GH repo 
+          command: |
+            gh repo delete <<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >> \
+            --confirm
+            
+workflows:
+  clone-and-create:
+    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_directory != "" and not pipeline.parameters.destroy_project
+    jobs:
+      - clone-and-create-repo:
+          context: 
+            - centralized-assest-github-envs
+      - configure-cci:
+          requires: [clone-and-create-repo]
+          context: 
+            - centralized-assest-github-envs
+  destroy_project: 
+    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_directory != "" and pipeline.parameters.destroy_project
+    jobs:
+      - destroy-cci-and-repo:
+          context: 
+            - centralized-assest-github-envs
+
+               
+commands:
+  setup-tf-vars:
+    steps:
+    - run: 
+        name: Use local TF terraform_provider
+        command: |
+          mkdir -p $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
+          cp .circleci/terraform_provider/terraform-provider-circleci  $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64/
+    - run:
+        name: Setup app specific variables from Port
+        command: |
+          export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --jq .id`
+          export APP_NAME=<< pipeline.parameters.target_repo >>
+          export TEMPLATE=<< pipeline.parameters.template_directory >>
+          export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
+          export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
+          export DEPLOYER_SECRET='pulledfromvault'
+          circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
+    - aws-cli/setup:
+        role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
+        role_session_name: "fe-provider-demo-<< pipeline.number >>"
