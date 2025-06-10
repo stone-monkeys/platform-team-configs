@@ -9,10 +9,10 @@ orbs:
 
 # Define pipeline parameters for API configuration
 parameters:
-  template_directory:
+  template_repo:
     type: string
     default: ""  # Must be provided via API
-    description: "Subdirectory within the template repo to use (e.g. frontend-templates, backend-templates)"
+    description: "Name of the template repository to use (e.g. python-starter-template, java-starter-template)"
   target_repo:
     type: string
     default: ""  # Must be provided via API
@@ -48,15 +48,15 @@ jobs:
       - gh/install
       - gh/setup
             
-      # Show available templates and selected template info
+      # Clone the template repository
       - run:
-          name: Show Template Info
+          name: Clone Template Repository
           command: |
-            echo "Available template directories:"
-            ls -la
+            echo "Cloning template repository: << pipeline.parameters.template_repo >>"
+            git clone https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.template_repo >>.git template-source
             echo ""
-            echo "Contents of selected template directory (<< pipeline.parameters.template_directory >>):"
-            cd << pipeline.parameters.template_directory >>
+            echo "Contents of template repository (<< pipeline.parameters.template_repo >>):"
+            cd template-source
             ls -la
 
       # Create target repository
@@ -95,7 +95,7 @@ jobs:
       - run:
           name: Push Template Code to Target Repository
           command: |
-            cd << pipeline.parameters.template_directory >>
+            cd template-source
             
             # Remove any existing git history
             rm -rf .git
@@ -107,7 +107,7 @@ jobs:
             
             # Add all files and make initial commit
             git add .
-            git commit -m "Initial commit - created from << pipeline.parameters.template_directory >> template"
+            git commit -m "Initial commit - created from << pipeline.parameters.template_repo >> template"
             
             # Add remote origin for target repository
             git remote add origin https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>.git
@@ -152,7 +152,7 @@ jobs:
             
 workflows:
   clone-and-create:
-    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_directory != "" and not pipeline.parameters.destroy_project
+    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_repo != "" and not pipeline.parameters.destroy_project
     jobs:
       - clone-and-create-repo:
           context: 
@@ -162,7 +162,7 @@ workflows:
           context: 
             - centralized-assest-github-envs
   destroy_project: 
-    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_directory != "" and pipeline.parameters.destroy_project
+    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_repo != "" and pipeline.parameters.destroy_project
     jobs:
       - destroy-cci-and-repo:
           context: 
@@ -182,7 +182,7 @@ commands:
         command: |
           export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --jq .id`
           export APP_NAME=<< pipeline.parameters.target_repo >>
-          export TEMPLATE=<< pipeline.parameters.template_directory >>
+          export TEMPLATE=<< pipeline.parameters.template_repo >>
           export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
           export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
           export DEPLOYER_SECRET='pulledfromvault'
