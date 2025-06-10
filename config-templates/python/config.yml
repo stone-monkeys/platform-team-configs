@@ -1,15 +1,33 @@
 version: 2.1
 
+# Import the team's config as an orb
 orbs:
-  team-config: 
+  team-config: << pipeline.parameters.config-override-url >>
+
+# Define parameters for configuration
+parameters:
+  config-override-url:
+    type: string
+    default: "https://raw.githubusercontent.com/<< pipeline.git.repo_owner >>/<< pipeline.git.repo_name >>/<< pipeline.git.revision >>/.circleci/team-config.yml"
+
 
 workflows:
   version: 2
   main:
     jobs:
-      - build
-      - test
-      - deploy
+      - build:
+          name: "Build Application"
+          override-with: team-config/build
+      - test:
+          name: "Test Application"
+          override-with: team-config/test
+          requires:
+            - "Build Application"
+      - deploy:
+          name: "Deploy Application"
+          override-with: team-config/deploy
+          requires:
+            - "Test Application"
 
 jobs:
   build:
