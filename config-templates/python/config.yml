@@ -1,0 +1,35 @@
+version: 2.1
+
+orbs:
+  team-config: 
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build
+      - test
+      - deploy
+
+jobs:
+  build:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run: echo "Building the application..."
+
+  test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Running tests..."
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Deploying the application..."
+
+# Customize the steps or images as needed for your stack.
+# You can override these jobs in your own repo if required. 
