@@ -1,0 +1,47 @@
+version: 2.1
+
+workflows:
+  version: 2
+  docker_ci:
+    jobs:
+      - checkout
+      - build-image
+      - test
+      - push-image
+      - deploy
+
+jobs:
+  checkout:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+
+  build-image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker
+      - run: docker build -t my-app:latest .
+
+  test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker
+      - run: docker run --rm my-app:latest pytest
+
+  push-image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - setup_remote_docker
+      - run: echo "Pushing Docker image..."
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Deploying Dockerized app..."
+
+# Developers can override jobs or add new ones in their own repos as needed. 

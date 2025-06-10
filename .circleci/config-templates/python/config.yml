@@ -1,0 +1,51 @@
+version: 2.1
+
+workflows:
+  version: 2
+  python_ci:
+    jobs:
+      - checkout
+      - install
+      - lint
+      - test
+      - build
+      - deploy
+
+jobs:
+  checkout:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+
+  install:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - run: pip install -r requirements.txt
+
+  lint:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - run: flake8 .
+
+  test:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - run: pytest
+
+  build:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - run: echo "Building Python app..."
+
+  deploy:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - run: echo "Deploying Python app..."
+
+# Developers can override jobs or add new ones in their own repos as needed. 

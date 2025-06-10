@@ -1,0 +1,44 @@
+version: 2.1
+
+workflows:
+  version: 2
+  base_ci:
+    jobs:
+      - checkout
+      - lint
+      - test
+      - build
+      - deploy
+
+jobs:
+  checkout:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+
+  lint:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Linting..."
+
+  test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Running tests..."
+
+  build:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Building..."
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "Deploying..."
+
+# Developers can override jobs or add new ones in their own repos as needed. 

@@ -1,0 +1,51 @@
+version: 2.1
+
+workflows:
+  version: 2
+  nodejs_ci:
+    jobs:
+      - checkout
+      - install
+      - lint
+      - test
+      - build
+      - deploy
+
+jobs:
+  checkout:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - checkout
+
+  install:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - run: npm ci
+
+  lint:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - run: npm run lint
+
+  test:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - run: npm test
+
+  build:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - run: npm run build
+
+  deploy:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - run: echo "Deploying Node.js app..."
+
+# Developers can override jobs or add new ones in their own repos as needed. 
