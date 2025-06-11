@@ -42,6 +42,8 @@ jobs:
   clone-and-create-repo:
     docker:
       - image: cimg/base:stable
+    environment:
+      WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
     steps: 
       - checkout
       # Install and authenticate GitHub CLI using the orb
@@ -52,9 +54,10 @@ jobs:
           command: |
             echo "Webhook JSON body:"
             echo "--------------------------------"
-            echo "<< pipeline.trigger_parameters.webhook.body >>"
+            echo "${WEBHOOK_BODY}"
             echo "--------------------------------"
-            eval $(echo '<< pipeline.trigger_parameters.webhook.body >>' | jq -r 'to_entries|map("export \(.key)=\(.value|@sh)")|.[]')
+            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
+            source $BASH_ENV
       - run:
           name: Print values from JSON body
           command: |
