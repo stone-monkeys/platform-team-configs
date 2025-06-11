@@ -24,7 +24,7 @@ parameters:
   aws-pipeline-iam-prefix:
     #used by pipeline as role, used by tf as role and policy name
     type: string
-    default: cera-fe-pipeline
+    default: circleci-labs-pipeline
   github_target_org:
     type: string
     default: CircleCI-Labs
