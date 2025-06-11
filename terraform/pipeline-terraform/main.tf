@@ -50,6 +50,6 @@ resource "circleci_trigger" "default" {
   event_source_provider         = "github_app"
   event_source_repo_external_id = var.appteam_pipeline_profiles.external_repo_id
   event_preset                  = "all-pushes"
-  config_ref                    = ""
+  config_ref                    = "main"
   checkout_ref                  = ""
 }
