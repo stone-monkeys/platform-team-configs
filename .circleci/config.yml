@@ -47,7 +47,19 @@ jobs:
       # Install and authenticate GitHub CLI using the orb
       - gh/install
       - gh/setup
-            
+      - run:
+          name: Export webhook JSON body as env vars
+          command: |
+            echo "Webhook JSON body:"
+            echo "--------------------------------"
+            echo "<< pipeline.trigger_parameters.webhook.body >>"
+            echo "--------------------------------"
+            eval $(echo '<< pipeline.trigger_parameters.webhook.body >>' | jq -r 'to_entries|map("export \(.key)=\(.value|@sh)")|.[]')
+      - run:
+          name: Print values from JSON body
+          command: |
+            echo "TEMPLATE_REPO: $TEMPLATE_REPO"
+            echo "TARGET_REPO: $TARGET_REPO"
       # Clone the template repository
       - run:
           name: Clone Template Repository
