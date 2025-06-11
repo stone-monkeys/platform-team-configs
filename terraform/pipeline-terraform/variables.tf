@@ -12,6 +12,7 @@ variable "appteam_pipeline_profiles" {
     application_name     = string
     application_template = string
     external_repo_id     = string #from Github, not the same as name
+    external_template_repo_id = string
     context_name         = string
     # Provided as type:value pairs
     context_restrictions = map(string)
