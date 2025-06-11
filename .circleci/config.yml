@@ -5,6 +5,7 @@ orbs:
   gh: circleci/github-cli@2.2
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
+  go: circleci/go@3.0.2
 
 
 # Define pipeline parameters for API configuration
@@ -145,53 +146,61 @@ workflows:
 
                
 commands:
-  setup-tf-vars-destroy:
+  build-terraform-provider-circleci:
     steps:
-    - run: 
-        name: Use local TF terraform_provider
-        command: |
-          mkdir -p $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
-          cp .circleci/terraform_provider/terraform-provider-circleci  $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64/
-    - run:
-        name: Setup app specific variables from Port
-        command: |
-          export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --jq .id`
-          export APP_NAME=<< pipeline.parameters.target_repo >>
-          export TEMPLATE=<< pipeline.parameters.template_repo >>
-          export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
-          export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
-          export DEPLOYER_SECRET='pulledfromvault'
-          circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
-    - aws-cli/setup:
-        role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
-        role_session_name: "fe-provider-demo-<< pipeline.number >>"
+      - go/install:
+          version: "1.22.3"
+      - run:
+          name: Build CircleCI Terraform Provider from GitHub
+          command: |
+            set -e
+            export PROVIDER_VERSION="0.0.1"
+            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
+            mkdir -p "$PROVIDER_PATH"
+            git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
+            cd /tmp/terraform-provider-circleci
+            go build -o terraform-provider-circleci
+            cp terraform-provider-circleci "$PROVIDER_PATH/"
+            echo "Provider built and copied to $PROVIDER_PATH"
   setup-tf-vars-create:
     steps:
-    - run: 
-        name: Use local TF terraform_provider
-        command: |
-          mkdir -p $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
-          cp .circleci/terraform_provider/terraform-provider-circleci  $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64/
-    - run:
-        name: Setup app specific variables from Port
-        command: |
-          export TARGET_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --jq .id`
-          export TEMPLATE_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TEMPLATE_REPO}" --jq .id`
-          export APP_NAME=${TARGET_REPO}
-          export TEMPLATE=${TEMPLATE_REPO}
-          export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
-          export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
-          export DEPLOYER_SECRET='pulledfromvault'
-          echo "TARGET_REPO_ID: $TARGET_REPO_ID"
-          echo "APP_NAME: $APP_NAME"
-          echo "TEMPLATE: $TEMPLATE"
-          echo "ORG_ID: $ORG_ID"
-          echo "ORG_SLUG: $ORG_SLUG"
-          echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
-          circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
-    - aws-cli/setup:
-        role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
-        role_session_name: "fe-provider-demo-<< pipeline.number >>"
+      - build-terraform-provider-circleci
+      - run:
+          name: Setup app specific variables from Port
+          command: |
+            export TARGET_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --jq .id`
+            export TEMPLATE_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TEMPLATE_REPO}" --jq .id`
+            export APP_NAME=${TARGET_REPO}
+            export TEMPLATE=${TEMPLATE_REPO}
+            export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
+            export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
+            export DEPLOYER_SECRET='pulledfromvault'
+            echo "TARGET_REPO_ID: $TARGET_REPO_ID"
+            echo "APP_NAME: $APP_NAME"
+            echo "TEMPLATE: $TEMPLATE"
+            echo "ORG_ID: $ORG_ID"
+            echo "ORG_SLUG: $ORG_SLUG"
+            echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
+            circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
+      - aws-cli/setup:
+          role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
+          role_session_name: "fe-provider-demo-<< pipeline.number >>"
+  setup-tf-vars-destroy:
+    steps:
+      - build-terraform-provider-circleci
+      - run:
+          name: Setup app specific variables from Port
+          command: |
+            export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --jq .id`
+            export APP_NAME=<< pipeline.parameters.target_repo >>
+            export TEMPLATE=<< pipeline.parameters.template_repo >>
+            export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
+            export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
+            export DEPLOYER_SECRET='pulledfromvault'
+            circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
+      - aws-cli/setup:
+          role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
+          role_session_name: "fe-provider-demo-<< pipeline.number >>"
   parse-webhook-payload:
     steps:
       - run:
