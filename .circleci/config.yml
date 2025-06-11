@@ -187,6 +187,6 @@ commands:
           export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
           export DEPLOYER_SECRET='pulledfromvault'
           circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
-    - aws-cli/setup:
-        role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
-        role_session_name: "fe-provider-demo-<< pipeline.number >>"
+    # - aws-cli/setup:
+    #     role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
+    #     role_session_name: "fe-provider-demo-<< pipeline.number >>"
