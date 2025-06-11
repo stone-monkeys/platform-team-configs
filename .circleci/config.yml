@@ -102,7 +102,7 @@ jobs:
       - parse-webhook-payload
       - setup-tf-vars-create
       - terraform/apply:
-          backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
+          backend_config: "key=fe-platform-demo/port/cci-labs-test.tfstate"
           path: terraform/pipeline-terraform
           var_file: app.tfvars 
 
@@ -114,7 +114,7 @@ jobs:
       - checkout
       - setup-tf-vars-destroy
       - terraform/destroy:
-          backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
+          backend_config: "key=fe-platform-demo/port/cci-labs-test.tfstate"
           path: terraform/pipeline-terraform
           var_file: app.tfvars 
       - gh/install
