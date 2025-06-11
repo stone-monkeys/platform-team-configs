@@ -6,6 +6,12 @@ variable "org_info" {
   })
 }
 
+variable "platform_configs_repo_id" {
+  description = "The external repository ID for platform-team-configs (where config templates are stored)"
+  type        = string
+  default     = "998922484"  # CircleCI-Labs/platform-team-configs
+}
+
 variable "appteam_pipeline_profiles" {
   description = "Collection on restricted contexts to manage."
   type = object({
