@@ -9,6 +9,7 @@
     "application_name" : "${APP_NAME}"
     "application_template" : "${TEMPLATE}"
     "external_repo_id" : "${REPO_ID}"
+    "external_template_repo_id" : "${TEMPLATE_REPO_ID}"
     "context_name" = "${APP_NAME}_prod"
     "context_restrictions" = {
       "project"    = "dynamic",
