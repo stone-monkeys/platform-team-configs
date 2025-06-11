@@ -60,22 +60,11 @@ jobs:
           command: |
             echo "TEMPLATE_REPO: $TEMPLATE_REPO"
             echo "TARGET_REPO: $TARGET_REPO"
-      # Clone the template repository
-      - run:
-          name: Clone Template Repository
-          command: |
-            echo "Cloning template repository: << pipeline.parameters.template_repo >>"
-            git clone https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.template_repo >>.git template-source
-            echo ""
-            echo "Contents of template repository (<< pipeline.parameters.template_repo >>):"
-            cd template-source
-            ls -la
-
       # Create target repository
       - run:
           name: Create Target Repository
           command: |
-            existing=`gh repo view  "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --json id --jq .id` || echo "Repo name available"
+            existing=`gh repo view  "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --json id --jq .id` || echo "Repo name available"
             if [ -n "$existing" ];then
               echo "Repository exists, skip creation"
               circleci step halt
@@ -84,8 +73,9 @@ jobs:
             echo "Creating target repository..."
             
             # Create repository using GitHub CLI
-            gh repo create "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" \
-              --private \
+            gh repo create "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" \
+              --template "<<pipeline.parameters.github_target_org>>/${TEMPLATE_REPO}" \
+              --internal \
               --clone=false 
             
             echo "Repository created successfully"
@@ -98,37 +88,11 @@ jobs:
       - run:
           name: Debug Repository Information
           command: |
-            echo "Target repository: << pipeline.parameters.target_repo >>"
+            echo "Target repository: ${TARGET_REPO}"
             echo "Checking if repository exists..."
-            gh repo view "<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" || echo "Repository view failed"
+            gh repo view "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" || echo "Repository view failed"
             echo "Testing repository access..."
-            git ls-remote https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>.git || echo "ls-remote failed"
-
-      - run:
-          name: Push Template Code to Target Repository
-          command: |
-            cd template-source
-            
-            # Remove any existing git history
-            rm -rf .git
-            
-            # Initialize new git repository
-            git init
-            git config user.email "circleci@<<pipeline.parameters.github_target_org>>.com"
-            git config user.name "CircleCI Bot"
-            
-            # Add all files and make initial commit
-            git add .
-            git commit -m "Initial commit - created from << pipeline.parameters.template_repo >> template"
-            
-            # Add remote origin for target repository
-            git remote add origin https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>.git
-            
-            # Push to main branch
-            git branch -M main
-            git push -u origin main
-            
-            echo "Template code successfully pushed to <<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>"
+            git ls-remote https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}.git || echo "ls-remote failed"
 
   configure-cci:
     docker:
