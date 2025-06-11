@@ -164,7 +164,7 @@ jobs:
             
 workflows:
   clone-and-create:
-    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_repo != "" and not pipeline.parameters.destroy_project
+    when: not pipeline.parameters.destroy_project
     jobs:
       - clone-and-create-repo:
           context: 
