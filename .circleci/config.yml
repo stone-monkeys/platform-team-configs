@@ -38,6 +38,7 @@ parameters:
     type: boolean
     default: false
 
+
 jobs:
   clone-and-create-repo:
     docker:
@@ -49,15 +50,7 @@ jobs:
       # Install and authenticate GitHub CLI using the orb
       - gh/install
       - gh/setup
-      - run:
-          name: Export webhook JSON body as env vars
-          command: |
-            echo "Webhook JSON body:"
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}"
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
-            source $BASH_ENV
+      - parse-webhook-payload
       - run:
           name: Print values from JSON body
           command: |
@@ -100,11 +93,14 @@ jobs:
   configure-cci:
     docker:
       - image: cimg/deploy:2025.01.1
+    environment:
+      WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
     steps:
       - checkout
       - gh/install
       - gh/setup
-      - setup-tf-vars
+      - parse-webhook-payload
+      - setup-tf-vars-create
       - terraform/apply:
           backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
           path: terraform/pipeline-terraform
@@ -116,7 +112,7 @@ jobs:
       - image: cimg/deploy:2025.01.1
     steps:
       - checkout
-      - setup-tf-vars
+      - setup-tf-vars-destroy
       - terraform/destroy:
           backend_config: "key=fe-platform-demo/port/<< pipeline.parameters.target_repo >>.tfstate"
           path: terraform/pipeline-terraform
@@ -149,7 +145,7 @@ workflows:
 
                
 commands:
-  setup-tf-vars:
+  setup-tf-vars-destroy:
     steps:
     - run: 
         name: Use local TF terraform_provider
@@ -169,3 +165,34 @@ commands:
     - aws-cli/setup:
         role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
         role_session_name: "fe-provider-demo-<< pipeline.number >>"
+  setup-tf-vars-create:
+    steps:
+    - run: 
+        name: Use local TF terraform_provider
+        command: |
+          mkdir -p $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
+          cp .circleci/terraform_provider/terraform-provider-circleci  $HOME/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64/
+    - run:
+        name: Setup app specific variables from Port
+        command: |
+          export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --jq .id`
+          export APP_NAME=${TARGET_REPO}
+          export TEMPLATE=${TEMPLATE_REPO}
+          export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
+          export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
+          export DEPLOYER_SECRET='pulledfromvault'
+          circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
+    - aws-cli/setup:
+        role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
+        role_session_name: "fe-provider-demo-<< pipeline.number >>"
+  parse-webhook-payload:
+    steps:
+      - run:
+          name: Parse webhook JSON body and export as env vars
+          command: |
+            echo "Webhook JSON body:" 
+            echo "--------------------------------"
+            echo "${WEBHOOK_BODY}"
+            echo "--------------------------------"
+            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
+            source $BASH_ENV
