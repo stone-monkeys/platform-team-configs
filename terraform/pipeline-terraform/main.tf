@@ -37,9 +37,9 @@ resource "circleci_pipeline" "default" {
   project_id                       = circleci_project.team_project.id
   checkout_source_provider         = "github_app"
   checkout_source_repo_external_id = var.appteam_pipeline_profiles.external_repo_id
-  config_source_file_path          = "config-templates/python/config.yml"
+  config_source_file_path          = ".circleci/config.yml"
   config_source_provider           = "github_app"
-  config_source_repo_external_id   = var.appteam_pipeline_profiles.external_template_repo_id
+  config_source_repo_external_id   = var.appteam_pipeline_profiles.external_repo_id
 }
 
 resource "circleci_trigger" "default" {
