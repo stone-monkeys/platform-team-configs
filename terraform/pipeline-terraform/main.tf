@@ -20,19 +20,11 @@ resource "github_repository" "new_repo" {
   }
 }
 
-# Wait for GitHub repository to be fully ready
-resource "time_sleep" "wait_for_repo" {
-  depends_on = [github_repository.new_repo]
-  create_duration = "10s"
-}
-
 resource "circleci_project" "team_project" {
   #for_each = toset(var.appteam_pipeline_profiles)
   name             = var.appteam_pipeline_profiles.application_name
   organization_id  = var.org_info.organization_id
   project_provider = var.org_info.project_provider
-  
-  depends_on = [time_sleep.wait_for_repo]
 }
 
 resource "circleci_context" "team_context" {
@@ -66,8 +58,6 @@ resource "circleci_pipeline" "default" {
   config_source_file_path          = "config-templates/python/config.yml"
   config_source_provider           = "github_app"
   config_source_repo_external_id   = data.github_repository.platform_configs_repo.repo_id
-  
-  depends_on = [time_sleep.wait_for_repo, circleci_project.team_project]
 }
 
 resource "circleci_trigger" "default" {
