@@ -22,13 +22,13 @@ variable "appteam_pipeline_profiles" {
   description = "Collection on restricted contexts to manage."
   type = object({
     application_name     = string
-    application_template = string
-    context_name         = string
+    application_template = optional(string, null)
+    context_name         = optional(string, null)
     # Provided as type:value pairs
-    context_restrictions = map(string)
+    context_restrictions = optional(map(string), {})
     # reference the value ina  sensitive set defined below, otherwise we can't loop values.
-    context_variables = set(string)
-    template_owner    = string
+    context_variables    = optional(set(string), [])
+    template_owner       = optional(string, null)
   })
   # No default - all values provided via tfvars
 }
