@@ -25,6 +25,6 @@ provider "circleci" {
 }
 
 provider "github" {
-  token = var.github_token
+  # token will be read from GITHUB_TOKEN environment variable automatically
   owner = var.github_owner
 }

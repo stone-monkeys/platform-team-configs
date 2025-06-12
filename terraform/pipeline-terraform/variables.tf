@@ -15,7 +15,7 @@ variable "platform_configs_repo_id" {
 variable "github_token" {
   description = "GitHub token for repo creation"
   type        = string
-  default     = "${env.GITHUB_TOKEN}"
+  default     = null
 }
 
 variable "github_owner" {
@@ -36,9 +36,7 @@ variable "appteam_pipeline_profiles" {
     context_variables = set(string)
     template_owner    = string
   })
-  default = {
-    template_owner = "CircleCI-Labs"
-  }
+  # No default - all values provided via tfvars
 }
 
 variable "app_team_passwords" {
