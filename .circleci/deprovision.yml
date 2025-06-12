@@ -1,47 +1,43 @@
 version: 2.1
 
-# Define the orbs we'll use
+# Define the orbs we'll use for deprovisioning
 orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
   go: circleci/go@3.0.2
 
-
-# Define pipeline parameters for API configuration
+# Define pipeline parameters for deprovisioning
 parameters:
-  template_repo:
-    type: string
-    default: ""  # Must be provided via API
-    description: "Name of the template repository to use (e.g. python-starter-template, java-starter-template)"
   target_repo:
     type: string
     default: ""  # Must be provided via API
-    description: "Name of the new repository to create (will be created in CCI-Labs org)"
-
+    description: "Name of the repository to destroy"
+  template_repo:
+    type: string
+    default: ""  # Must be provided via API
+    description: "Name of the template repository that was used"
 
 jobs:
-  configure-cci:
+  destroy-cci-and-repo:
     docker:
       - image: cimg/deploy:2025.01.1
-    environment:
-      WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
     steps:
       - checkout
-      - parse-webhook-payload
-      - setup-tf-vars-create
+      - setup-tf-vars-destroy
       - run:
           name: Generate backend config
           command: |
             echo "key=\"fe-platform-demo/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
-      - terraform/apply:
+      - terraform/destroy:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
 
 workflows:
-  provision-infrastructure:
+  destroy_project: 
+    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_repo != ""
     jobs:
-      - configure-cci:
+      - destroy-cci-and-repo:
           context: 
             - centralized-assest-github-envs
 
@@ -80,7 +76,8 @@ commands:
           key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
           paths:
             - ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
-  setup-tf-vars-create:
+
+  setup-tf-vars-destroy:
     steps:
       - build-terraform-provider-circleci
       - restore_cache:
@@ -88,11 +85,11 @@ commands:
             - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
             - terraform-providers-v1-
       - run:
-          name: Setup app specific variables from Port
+          name: Setup app specific variables for destruction
           command: |
             # No longer need to fetch repo IDs via GitHub API - Terraform handles this
-            export APP_NAME=${TARGET_REPO}
-            export TEMPLATE=${TEMPLATE_REPO}
+            export APP_NAME=<< pipeline.parameters.target_repo >>
+            export TEMPLATE=<< pipeline.parameters.template_repo >>
             export ORG_ID=${CIRCLE_ORGANIZATION_ID}
             export ORG_SLUG=${CIRCLECI_ORG_SLUG}
             export DEPLOYER_SECRET='pulledfromvault'
@@ -107,18 +104,7 @@ commands:
       - aws-cli/setup:
           role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
-      - save_cache:                                  
+      - save_cache:
           key: terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
           paths:
             - terraform/pipeline-terraform/.terraform
-  parse-webhook-payload:
-    steps:
-      - run:
-          name: Parse webhook JSON body and export as env vars
-          command: |
-            echo "Webhook JSON body:" 
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}"
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
-            source $BASH_ENV
