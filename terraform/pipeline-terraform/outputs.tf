@@ -24,7 +24,7 @@ output "github_repo_url" {
 }
 
 output "github_repo_clone_url" {
-  value = github_repository.new_repo.clone_url
+  value = github_repository.new_repo.git_clone_url
 }
 
 output "template_repo_id" {
