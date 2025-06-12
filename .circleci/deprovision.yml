@@ -4,7 +4,7 @@ version: 2.1
 orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
-  go: circleci/go@3.0.2
+  platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/eceaf9dd0f3dbe630894f20920dbd2faadd80162/orbs/platform-team.yml
 
 # Define pipeline parameters for deprovisioning
 parameters:
@@ -19,7 +19,11 @@ jobs:
       - image: cimg/deploy:2025.01.1
     steps:
       - checkout
-      - setup-tf-vars-destroy
+      - platform-team/build-terraform-provider-circleci:
+          provider_version: "0.0.1"
+      - aws-cli/setup:
+          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
+          role_session_name: "fe-provider-demo-<< pipeline.number >>"
       - run:
           name: Generate backend config
           command: |
@@ -39,54 +43,3 @@ workflows:
       - destroy-cci-and-repo:
           context:
             - centralized-assest-github-envs
-
-commands:
-  build-terraform-provider-circleci:
-    steps:
-      - run:
-          name: Clone Terraform Provider Repo and Write Commit SHA
-          command: |
-            export PROVIDER_VERSION="0.0.1"
-            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
-            mkdir -p "$PROVIDER_PATH"
-            git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
-            cd /tmp/terraform-provider-circleci
-            git rev-parse HEAD > /tmp/terraform-provider-circleci.txt
-      - restore_cache:
-          keys:
-            - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
-      - go/install:
-          version: "1.22.3"
-      - run:
-          name: Use cached provider if available, else build
-          command: |
-            export PROVIDER_VERSION="0.0.1"
-            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
-            if [ -f "$PROVIDER_PATH/terraform-provider-circleci" ]; then
-              echo "Provider binary found in cache, skipping build."
-            else
-              echo "Provider binary not found, building..."
-              cd /tmp/terraform-provider-circleci
-              go build -o terraform-provider-circleci
-              cp terraform-provider-circleci "$PROVIDER_PATH/"
-              echo "Provider built and copied to $PROVIDER_PATH"
-            fi
-      - save_cache:
-          key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
-          paths:
-            - ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
-
-  setup-tf-vars-destroy:
-    steps:
-      - build-terraform-provider-circleci
-      - restore_cache:
-          keys:
-            - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
-            - terraform-providers-v1-
-      - aws-cli/setup:
-          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
-          role_session_name: "fe-provider-demo-<< pipeline.number >>"
-      - save_cache:
-          key: terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
-          paths:
-            - terraform/pipeline-terraform/.terraform
