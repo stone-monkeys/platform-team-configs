@@ -15,6 +15,16 @@ output "context_url" {
   value = "https://app.circleci.com/settings/organization/${var.org_info.organization_slug}/contexts/${circleci_context.team_context.id}"
 }
 
+output "existing_context_restriction_id" {
+  description = "ID of the project restriction added to the existing context"
+  value = circleci_context_restriction.existing_context_project_restriction.id
+}
+
+output "existing_context_name" {
+  description = "Name of the existing context that was restricted"
+  value = data.circleci_context.existing_context.name
+}
+
 output "default_pipeline_id" {
   value = circleci_pipeline.default.id
 }

@@ -8,6 +8,11 @@ data "github_repository" "platform_configs_repo" {
   name = "platform-team-configs"
 }
 
+# Data source to fetch existing CircleCI context
+data "circleci_context" "existing_context" {
+  id = "0731337b-c13e-402c-9159-4119e0240d19"
+}
+
 # Create the GitHub repository first
 resource "github_repository" "new_repo" {
   name        = var.appteam_pipeline_profiles.application_name
@@ -47,6 +52,13 @@ resource "circleci_context_environment_variable" "team_variables" {
   context_id = circleci_context.team_context.id
   name       = each.value
   value      = var.app_team_passwords[each.key]
+}
+
+# Add project restriction to existing context
+resource "circleci_context_restriction" "existing_context_project_restriction" {
+  context_id = data.circleci_context.existing_context.id
+  type       = "project"
+  value      = circleci_project.team_project.id
 }
 
 resource "circleci_pipeline" "default" {
