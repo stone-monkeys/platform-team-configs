@@ -41,56 +41,6 @@ parameters:
 
 
 jobs:
-  clone-and-create-repo:
-    docker:
-      - image: cimg/base:stable
-    environment:
-      WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
-    steps: 
-      - checkout
-      # Install and authenticate GitHub CLI using the orb
-      - gh/install
-      - gh/setup
-      - parse-webhook-payload
-      - run:
-          name: Print values from JSON body
-          command: |
-            echo "TEMPLATE_REPO: $TEMPLATE_REPO"
-            echo "TARGET_REPO: $TARGET_REPO"
-      # Create target repository
-      - run:
-          name: Create Target Repository
-          command: |
-            existing=`gh repo view  "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --json id --jq .id` || echo "Repo name available"
-            if [ -n "$existing" ];then
-              echo "Repository exists, skip creation"
-              circleci step halt
-              exit 0
-            fi
-            echo "Creating target repository..."
-            
-            # Create repository using GitHub CLI
-            gh repo create "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" \
-              --template "<<pipeline.parameters.github_target_org>>/${TEMPLATE_REPO}" \
-              --internal \
-              --clone=false 
-            
-            echo "Repository created successfully"
-            
-            # Wait a moment for repository to be fully ready
-            echo "Waiting for repository to be ready..."
-            sleep 5
-
-      # Push template code to target repository
-      - run:
-          name: Debug Repository Information
-          command: |
-            echo "Target repository: ${TARGET_REPO}"
-            echo "Checking if repository exists..."
-            gh repo view "<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" || echo "Repository view failed"
-            echo "Testing repository access..."
-            git ls-remote https://${GITHUB_TOKEN}@github.com/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}.git || echo "ls-remote failed"
-
   configure-cci:
     docker:
       - image: cimg/deploy:2025.01.1
@@ -110,7 +60,6 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
-
 
   destroy-cci-and-repo:
     docker:
@@ -138,12 +87,7 @@ workflows:
   clone-and-create:
     when: not pipeline.parameters.destroy_project
     jobs:
-      # Disabled for testing Terraform repo creation
-      # - clone-and-create-repo:
-      #     context: 
-      #       - centralized-assest-github-envs
       - configure-cci:
-          # requires: [clone-and-create-repo]  # Removed dependency for Terraform-only testing
           context: 
             - centralized-assest-github-envs
   destroy_project: 
@@ -192,6 +136,10 @@ commands:
   setup-tf-vars-create:
     steps:
       - build-terraform-provider-circleci
+      - restore_cache:
+          keys:
+            - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
+            - terraform-providers-v1-
       - run:
           name: Setup app specific variables from Port
           command: |
@@ -212,9 +160,17 @@ commands:
       - aws-cli/setup:
           role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
+      - save_cache:
+          key: terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
+          paths:
+            - terraform/pipeline-terraform/.terraform
   setup-tf-vars-destroy:
     steps:
       - build-terraform-provider-circleci
+      - restore_cache:
+          keys:
+            - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
+            - terraform-providers-v1-
       - run:
           name: Setup app specific variables from Port
           command: |
@@ -235,6 +191,10 @@ commands:
       - aws-cli/setup:
           role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
+      - save_cache:
+          key: terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
+          paths:
+            - terraform/pipeline-terraform/.terraform
   parse-webhook-payload:
     steps:
       - run:
