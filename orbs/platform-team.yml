@@ -64,7 +64,7 @@ commands:
           name: Setup app specific variables from Port
           command: |
             export APP_NAME=${TARGET_REPO}
-            export TEMPLATE=${TEMPLATE_REPO}
+            export TEMPLATE=${TEMPLATE_REPO:-python-starter-template}
             export ORG_ID=${CIRCLE_ORGANIZATION_ID}
             export ORG_SLUG=${CIRCLECI_ORG_SLUG}
             export DEPLOYER_SECRET='pulledfromvault'
