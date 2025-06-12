@@ -30,10 +30,11 @@ jobs:
           name: Generate backend config
           command: |
             echo "key=\"fe-platform-demo/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
+      - platform-team/setup-tf-vars
       - terraform/destroy:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
-          var: application_name=<< pipeline.parameters.target_repo >>
+          var_file: app.tfvars
 
 workflows:
   destroy_project:
