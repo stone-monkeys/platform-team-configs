@@ -1,0 +1,59 @@
+version: 2.1
+orbs:
+  go: circleci/go@3.0.2
+
+commands:
+  build-terraform-provider-circleci:
+    parameters:
+      provider_version:
+        type: string
+        default: "0.0.1"
+    steps:
+      - run:
+          name: Export provider version and path
+          command: |
+            echo "export PROVIDER_VERSION=<< pipeline.parameters.provider_version >>"
+            echo "export PROVIDER_PATH=$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/<< pipeline.parameters.provider_version >>/linux_amd64"
+            echo "export PROVIDER_VERSION=<< pipeline.parameters.provider_version >>" >> $BASH_ENV
+            echo "export PROVIDER_PATH=$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/<< pipeline.parameters.provider_version >>/linux_amd64" >> $BASH_ENV
+            source $BASH_ENV
+      - run:
+          name: Clone Terraform Provider Repo and Write Commit SHA
+          command: |
+            mkdir -p "$PROVIDER_PATH"
+            git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
+            cd /tmp/terraform-provider-circleci
+            git rev-parse HEAD > /tmp/terraform-provider-circleci.txt
+      - restore_cache:
+          keys:
+            - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+      - go/install:
+          version: "1.22.3"
+      - run:
+          name: Use cached provider if available, else build
+          command: |
+            if [ -f "$PROVIDER_PATH/terraform-provider-circleci" ]; then
+              echo "Provider binary found in cache, skipping build."
+            else
+              echo "Provider binary not found, building..."
+              cd /tmp/terraform-provider-circleci
+              go build -o terraform-provider-circleci
+              cp terraform-provider-circleci "$PROVIDER_PATH/"
+              echo "Provider built and copied to $PROVIDER_PATH"
+            fi
+      - save_cache:
+          key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+          paths:
+            - ~/.terraform.d/plugins/circleci.com/circleci/circleci/<< pipeline.parameters.provider_version >>/linux_amd64
+
+  parse-webhook-payload:
+    steps:
+      - run:
+          name: Parse webhook JSON body and export as env vars
+          command: |
+            echo "Webhook JSON body:" 
+            echo "--------------------------------"
+            echo "${WEBHOOK_BODY}"
+            echo "--------------------------------"
+            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
+            source $BASH_ENV

@@ -4,20 +4,7 @@ version: 2.1
 orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
-  go: circleci/go@3.0.2
-
-
-# Define pipeline parameters for API configuration
-parameters:
-  template_repo:
-    type: string
-    default: ""  # Must be provided via API
-    description: "Name of the template repository to use (e.g. python-starter-template, java-starter-template)"
-  target_repo:
-    type: string
-    default: ""  # Must be provided via API
-    description: "Name of the new repository to create (will be created in CCI-Labs org)"
-
+  platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/refs/heads/main/orbs/platform-team.yml
 
 jobs:
   configure-cci:
@@ -27,8 +14,13 @@ jobs:
       WEBHOOK_BODY: << pipeline.trigger_parameters.webhook.body >>
     steps:
       - checkout
-      - parse-webhook-payload
+      - platform-team/parse-webhook-payload
+      - platform-team/build-terraform-provider-circleci:
+          provider_version: "0.0.1"
       - setup-tf-vars-create
+      - aws-cli/setup:
+          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
+          role_session_name: "fe-provider-demo-<< pipeline.number >>"
       - run:
           name: Generate backend config
           command: |
@@ -40,57 +32,21 @@ jobs:
 
 workflows:
   provision-infrastructure:
+    when:
+      and:
+        - equal: [ webhook, << pipeline.trigger_source >> ]
+        - << pipeline.trigger_parameters.webhook.body >>
     jobs:
       - configure-cci:
           context: 
             - centralized-assest-github-envs
 
 commands:
-  build-terraform-provider-circleci:
-    steps:
-      - run:
-          name: Clone Terraform Provider Repo and Write Commit SHA
-          command: |
-            export PROVIDER_VERSION="0.0.1"
-            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
-            mkdir -p "$PROVIDER_PATH"
-            git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
-            cd /tmp/terraform-provider-circleci
-            git rev-parse HEAD > /tmp/terraform-provider-circleci.txt
-      - restore_cache:
-          keys:
-            - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
-      - go/install:
-          version: "1.22.3"
-      - run:
-          name: Use cached provider if available, else build
-          command: |
-            export PROVIDER_VERSION="0.0.1"
-            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
-            if [ -f "$PROVIDER_PATH/terraform-provider-circleci" ]; then
-              echo "Provider binary found in cache, skipping build."
-            else
-              echo "Provider binary not found, building..."
-              cd /tmp/terraform-provider-circleci
-              go build -o terraform-provider-circleci
-              cp terraform-provider-circleci "$PROVIDER_PATH/"
-              echo "Provider built and copied to $PROVIDER_PATH"
-            fi
-      - save_cache:
-          key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
-          paths:
-            - ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
   setup-tf-vars-create:
     steps:
-      - build-terraform-provider-circleci
-      - restore_cache:
-          keys:
-            - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
-            - terraform-providers-v1-
       - run:
           name: Setup app specific variables from Port
           command: |
-            # No longer need to fetch repo IDs via GitHub API - Terraform handles this
             export APP_NAME=${TARGET_REPO}
             export TEMPLATE=${TEMPLATE_REPO}
             export ORG_ID=${CIRCLE_ORGANIZATION_ID}
@@ -104,21 +60,3 @@ commands:
             echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
             echo "TEMPLATE_OWNER: $TEMPLATE_OWNER"
             circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
-      - aws-cli/setup:
-          role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
-          role_session_name: "fe-provider-demo-<< pipeline.number >>"
-      - save_cache:                                  
-          key: terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
-          paths:
-            - terraform/pipeline-terraform/.terraform
-  parse-webhook-payload:
-    steps:
-      - run:
-          name: Parse webhook JSON body and export as env vars
-          command: |
-            echo "Webhook JSON body:" 
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}"
-            echo "--------------------------------"
-            echo "${WEBHOOK_BODY}" | jq -r 'to_entries | .[] | "export \(.key | ascii_upcase)=\(.value)"' >> $BASH_ENV
-            source $BASH_ENV
