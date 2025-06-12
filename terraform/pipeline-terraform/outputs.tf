@@ -34,3 +34,29 @@ output "template_repo_id" {
 output "template_repo_url" {
   value = data.github_repository.template_repo.html_url
 }
+
+# Debug outputs for ID formats
+output "debug_new_repo_repo_id" {
+  description = "Numeric repo ID of the newly created repository"
+  value = github_repository.new_repo.repo_id
+}
+
+output "debug_new_repo_node_id" {
+  description = "GraphQL node ID of the newly created repository"
+  value = github_repository.new_repo.node_id
+}
+
+output "debug_template_repo_repo_id" {
+  description = "Numeric repo ID of the template repository"
+  value = data.github_repository.template_repo.repo_id
+}
+
+output "debug_template_repo_node_id" {
+  description = "GraphQL node ID of the template repository"
+  value = data.github_repository.template_repo.node_id
+}
+
+output "debug_platform_configs_repo_id" {
+  description = "Numeric repo ID of the platform-team-configs repository"
+  value = data.github_repository.platform_configs_repo.repo_id
+}

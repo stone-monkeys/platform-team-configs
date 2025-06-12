@@ -3,6 +3,11 @@ data "github_repository" "template_repo" {
   name = var.appteam_pipeline_profiles.application_template
 }
 
+# Data source to fetch platform-team-configs repository (where config templates are stored)
+data "github_repository" "platform_configs_repo" {
+  name = "platform-team-configs"
+}
+
 # Create the GitHub repository first
 resource "github_repository" "new_repo" {
   name        = var.appteam_pipeline_profiles.application_name
@@ -57,10 +62,10 @@ resource "circleci_pipeline" "default" {
   description                      = "Run on all commits"
   project_id                       = circleci_project.team_project.id
   checkout_source_provider         = "github_app"
-  checkout_source_repo_external_id = github_repository.new_repo.node_id
+  checkout_source_repo_external_id = github_repository.new_repo.repo_id
   config_source_file_path          = "config-templates/python/config.yml"
   config_source_provider           = "github_app"
-  config_source_repo_external_id   = var.platform_configs_repo_id
+  config_source_repo_external_id   = data.github_repository.platform_configs_repo.repo_id
   
   depends_on = [time_sleep.wait_for_repo, circleci_project.team_project]
 }
@@ -71,7 +76,7 @@ resource "circleci_trigger" "default" {
   pipeline_id                   = circleci_pipeline.default.id
   project_id                    = circleci_project.team_project.id
   event_source_provider         = "github_app"
-  event_source_repo_external_id = github_repository.new_repo.node_id
+  event_source_repo_external_id = github_repository.new_repo.repo_id
   event_preset                  = "all-pushes"
   config_ref                    = "main"
   checkout_ref                  = ""

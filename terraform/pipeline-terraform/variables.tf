@@ -6,12 +6,6 @@ variable "org_info" {
   })
 }
 
-variable "platform_configs_repo_id" {
-  description = "The external repository ID for platform-team-configs (where config templates are stored)"
-  type        = string
-  default     = "998922484"  # CircleCI-Labs/platform-team-configs
-}
-
 variable "github_token" {
   description = "GitHub token for repo creation"
   type        = string
