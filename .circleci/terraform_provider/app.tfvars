@@ -8,8 +8,7 @@
   appteam_pipeline_profiles ={
     "application_name" : "${APP_NAME}"
     "application_template" : "${TEMPLATE}"
-    "external_repo_id" : "${TARGET_REPO_ID}"
-    "external_template_repo_id" : "${TEMPLATE_REPO_ID}"
+    "template_owner" : "${TEMPLATE_OWNER}"
     "context_name" = "${APP_NAME}_prod"
     "context_restrictions" = {
       "project"    = "dynamic",

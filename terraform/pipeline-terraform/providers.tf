@@ -11,6 +11,10 @@ terraform {
       # currently depends on config.yml creation of ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64 directory containing binary
       source = "circleci.com/circleci/circleci"
     }
+    github = {
+      source  = "integrations/github"
+      version = ">= 5.0.0"
+    }
   }
 }
 
@@ -18,4 +22,9 @@ provider "circleci" {
   host = "https://circleci.com/api/v2/"
   #key  = "*****"
   # Using envvar CIRCLE_TOKEN
+}
+
+provider "github" {
+  token = var.github_token
+  owner = var.github_owner
 }

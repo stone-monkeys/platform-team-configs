@@ -18,3 +18,19 @@ output "context_url" {
 output "default_pipeline_id" {
   value = circleci_pipeline.default.id
 }
+
+output "github_repo_url" {
+  value = github_repository.new_repo.html_url
+}
+
+output "github_repo_clone_url" {
+  value = github_repository.new_repo.clone_url
+}
+
+output "template_repo_id" {
+  value = data.github_repository.template_repo.repo_id
+}
+
+output "template_repo_url" {
+  value = data.github_repository.template_repo.html_url
+}

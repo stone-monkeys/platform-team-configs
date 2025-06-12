@@ -138,11 +138,12 @@ workflows:
   clone-and-create:
     when: not pipeline.parameters.destroy_project
     jobs:
-      - clone-and-create-repo:
-          context: 
-            - centralized-assest-github-envs
+      # Disabled for testing Terraform repo creation
+      # - clone-and-create-repo:
+      #     context: 
+      #       - centralized-assest-github-envs
       - configure-cci:
-          requires: [clone-and-create-repo]
+          # requires: [clone-and-create-repo]  # Removed dependency for Terraform-only testing
           context: 
             - centralized-assest-github-envs
   destroy_project: 
@@ -194,19 +195,19 @@ commands:
       - run:
           name: Setup app specific variables from Port
           command: |
-            export TARGET_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TARGET_REPO}" --jq .id`
-            export TEMPLATE_REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/${TEMPLATE_REPO}" --jq .id`
+            # No longer need to fetch repo IDs via GitHub API - Terraform handles this
             export APP_NAME=${TARGET_REPO}
             export TEMPLATE=${TEMPLATE_REPO}
             export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
             export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
             export DEPLOYER_SECRET='pulledfromvault'
-            echo "TARGET_REPO_ID: $TARGET_REPO_ID"
+            export TEMPLATE_OWNER=<< pipeline.parameters.github_target_org >>
             echo "APP_NAME: $APP_NAME"
             echo "TEMPLATE: $TEMPLATE"
             echo "ORG_ID: $ORG_ID"
             echo "ORG_SLUG: $ORG_SLUG"
             echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
+            echo "TEMPLATE_OWNER: $TEMPLATE_OWNER"
             circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
       - aws-cli/setup:
           role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"
@@ -217,12 +218,19 @@ commands:
       - run:
           name: Setup app specific variables from Port
           command: |
-            export REPO_ID=`gh api -X GET  "/repos/<<pipeline.parameters.github_target_org>>/<< pipeline.parameters.target_repo >>" --jq .id`
+            # No longer need to fetch repo IDs via GitHub API - Terraform handles this
             export APP_NAME=<< pipeline.parameters.target_repo >>
             export TEMPLATE=<< pipeline.parameters.template_repo >>
             export ORG_ID=<< pipeline.parameters.circleci_target_org_id >>
             export ORG_SLUG=<< pipeline.parameters.circleci_target_org_slug >>
             export DEPLOYER_SECRET='pulledfromvault'
+            export TEMPLATE_OWNER=<< pipeline.parameters.github_target_org >>
+            echo "APP_NAME: $APP_NAME"
+            echo "TEMPLATE: $TEMPLATE"
+            echo "ORG_ID: $ORG_ID"
+            echo "ORG_SLUG: $ORG_SLUG"
+            echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
+            echo "TEMPLATE_OWNER: $TEMPLATE_OWNER"
             circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
       - aws-cli/setup:
           role_arn: "arn:aws:iam::<<pipeline.parameters.aws-account-id>>:role/<<pipeline.parameters.aws-pipeline-iam-prefix>>-role"

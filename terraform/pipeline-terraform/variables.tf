@@ -12,21 +12,33 @@ variable "platform_configs_repo_id" {
   default     = "998922484"  # CircleCI-Labs/platform-team-configs
 }
 
+variable "github_token" {
+  description = "GitHub token for repo creation"
+  type        = string
+  default     = "${env.GITHUB_TOKEN}"
+}
+
+variable "github_owner" {
+  description = "GitHub organization or user for repo creation"
+  type        = string
+  default     = "CircleCI-Labs"
+}
+
 variable "appteam_pipeline_profiles" {
   description = "Collection on restricted contexts to manage."
   type = object({
     application_name     = string
     application_template = string
-    external_repo_id     = string #from Github, not the same as name
-    external_template_repo_id = string
     context_name         = string
     # Provided as type:value pairs
     context_restrictions = map(string)
     # reference the value ina  sensitive set defined below, otherwise we can't loop values.
     context_variables = set(string)
+    template_owner    = string
   })
-
-
+  default = {
+    template_owner = "CircleCI-Labs"
+  }
 }
 
 variable "app_team_passwords" {
