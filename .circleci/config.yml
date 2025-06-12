@@ -29,6 +29,23 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
+      - run:
+          name: Trigger initial CI/CD pipeline with empty commit
+          command: |
+            # Clone only the latest commit to minimize data transfer
+            git clone --depth=1 https://github.com/${GITHUB_ORG}/${TARGET_REPO}.git /tmp/trigger-repo
+            cd /tmp/trigger-repo
+            
+            # Configure git for the commit
+            git config user.name "Platform Team Bot"
+            git config user.email "platform-team@circleci.com"
+            
+            # Create and push empty commit to trigger CI/CD
+            git commit --allow-empty -m "chore: trigger initial CI/CD pipeline
+
+            This empty commit was created automatically by the platform team
+            to trigger the initial CI/CD pipeline for this repository."
+            git push origin main
 
 workflows:
   provision-infrastructure:
