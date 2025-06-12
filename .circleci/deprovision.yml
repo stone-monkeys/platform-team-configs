@@ -12,10 +12,6 @@ parameters:
     type: string
     default: ""  # Must be provided via API
     description: "Name of the repository to destroy"
-  template_repo:
-    type: string
-    default: ""  # Must be provided via API
-    description: "Name of the template repository that was used"
 
 jobs:
   destroy-cci-and-repo:
@@ -31,14 +27,17 @@ jobs:
       - terraform/destroy:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
-          var_file: app.tfvars
+          var: application_name=<< pipeline.parameters.target_repo >>
 
 workflows:
-  destroy_project: 
-    when: pipeline.parameters.target_repo != "" and pipeline.parameters.template_repo != ""
+  destroy_project:
+    when:
+      and:
+        - equal: [ api, << pipeline.trigger_source >> ]
+        - << pipeline.parameters.target_repo >>
     jobs:
       - destroy-cci-and-repo:
-          context: 
+          context:
             - centralized-assest-github-envs
 
 commands:
@@ -84,23 +83,6 @@ commands:
           keys:
             - terraform-providers-v1-{{ checksum "terraform/pipeline-terraform/providers.tf" }}
             - terraform-providers-v1-
-      - run:
-          name: Setup app specific variables for destruction
-          command: |
-            # No longer need to fetch repo IDs via GitHub API - Terraform handles this
-            export APP_NAME=<< pipeline.parameters.target_repo >>
-            export TEMPLATE=<< pipeline.parameters.template_repo >>
-            export ORG_ID=${CIRCLE_ORGANIZATION_ID}
-            export ORG_SLUG=${CIRCLECI_ORG_SLUG}
-            export DEPLOYER_SECRET='pulledfromvault'
-            export TEMPLATE_OWNER=${GITHUB_ORG}
-            echo "APP_NAME: $APP_NAME"
-            echo "TEMPLATE: $TEMPLATE"
-            echo "ORG_ID: $ORG_ID"
-            echo "ORG_SLUG: $ORG_SLUG"
-            echo "DEPLOYER_SECRET: $DEPLOYER_SECRET"
-            echo "TEMPLATE_OWNER: $TEMPLATE_OWNER"
-            circleci env subst < .circleci/terraform_provider/app.tfvars > terraform/pipeline-terraform/app.tfvars
       - aws-cli/setup:
           role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
           role_session_name: "fe-provider-demo-<< pipeline.number >>"
