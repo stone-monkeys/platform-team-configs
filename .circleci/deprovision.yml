@@ -17,6 +17,8 @@ jobs:
   destroy-cci-and-repo:
     docker:
       - image: cimg/deploy:2025.01.1
+    environment:
+      TARGET_REPO: << pipeline.parameters.target_repo >>
     steps:
       - checkout
       - platform-team/build-terraform-provider-circleci:
