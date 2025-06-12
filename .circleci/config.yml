@@ -4,6 +4,7 @@ version: 2.1
 orbs:
   terraform: circleci/terraform@3.6
   aws-cli: circleci/aws-cli@5.4.0
+  gh: circleci/github-cli@2.2
   platform-team: https://raw.githubusercontent.com/CircleCI-Labs/platform-team-configs/883ecfa5b0d11624387665afad8d0d37e4d1eaac/orbs/platform-team.yml
 
 jobs:
@@ -29,11 +30,12 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
+      - gh/setup
       - run:
           name: Trigger initial CI/CD pipeline with empty commit
           command: |
-            # Clone only the latest commit to minimize data transfer
-            git clone --depth=1 https://github.com/${GITHUB_ORG}/${TARGET_REPO}.git /tmp/trigger-repo
+            # Use GitHub CLI to clone (handles auth automatically) and create empty commit
+            gh repo clone ${GITHUB_ORG}/${TARGET_REPO} /tmp/trigger-repo -- --depth=1
             cd /tmp/trigger-repo
             
             # Configure git for the commit
@@ -45,6 +47,8 @@ jobs:
 
             This empty commit was created automatically by the platform team
             to trigger the initial CI/CD pipeline for this repository."
+            
+            # Push using GitHub CLI (handles auth)
             git push origin main
 
 workflows:
