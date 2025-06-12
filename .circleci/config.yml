@@ -156,20 +156,38 @@ workflows:
 commands:
   build-terraform-provider-circleci:
     steps:
-      - go/install:
-          version: "1.22.3"
       - run:
-          name: Build CircleCI Terraform Provider from GitHub
+          name: Clone Terraform Provider Repo and Write Commit SHA
           command: |
-            set -e
             export PROVIDER_VERSION="0.0.1"
             export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
             mkdir -p "$PROVIDER_PATH"
             git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
             cd /tmp/terraform-provider-circleci
-            go build -o terraform-provider-circleci
-            cp terraform-provider-circleci "$PROVIDER_PATH/"
-            echo "Provider built and copied to $PROVIDER_PATH"
+            git rev-parse HEAD > /tmp/terraform-provider-circleci.txt
+      - restore_cache:
+          keys:
+            - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+      - go/install:
+          version: "1.22.3"
+      - run:
+          name: Use cached provider if available, else build
+          command: |
+            export PROVIDER_VERSION="0.0.1"
+            export PROVIDER_PATH="$HOME/.terraform.d/plugins/circleci.com/circleci/circleci/${PROVIDER_VERSION}/linux_amd64"
+            if [ -f "$PROVIDER_PATH/terraform-provider-circleci" ]; then
+              echo "Provider binary found in cache, skipping build."
+            else
+              echo "Provider binary not found, building..."
+              cd /tmp/terraform-provider-circleci
+              go build -o terraform-provider-circleci
+              cp terraform-provider-circleci "$PROVIDER_PATH/"
+              echo "Provider built and copied to $PROVIDER_PATH"
+            fi
+      - save_cache:
+          key: terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
+          paths:
+            - ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64
   setup-tf-vars-create:
     steps:
       - build-terraform-provider-circleci
