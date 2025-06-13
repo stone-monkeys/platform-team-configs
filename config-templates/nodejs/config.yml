@@ -1,51 +1,103 @@
 version: 2.1
 
+# Import the team's config as an orb
+orbs:
+  team-config: << pipeline.parameters.config-override-url >>
+
+# Define parameters for configuration
+parameters:
+  config-override-url:
+    type: string
+    default: "https://raw.githubusercontent.com/<< pipeline.git.repo_owner >>/<< pipeline.git.repo_name >>/<< pipeline.git.revision >>/.circleci/team-config.yml"
+
 workflows:
   version: 2
   nodejs_ci:
     jobs:
-      - checkout
-      - install
-      - lint
-      - test
-      - build
-      - deploy
+      # Lint and build run in parallel - both are independent
+      - lint:
+          name: "Lint Code"
+      - build:
+          name: "Build Application"
+          override-with: team-config/build
+          context: shared-docker-publishing
+      # Test requires both lint and build to complete
+      - test:
+          name: "Test Application"
+          override-with: team-config/test
+          requires:
+            - "Lint Code"
+            - "Build Application"
+      - deploy:
+          name: "Deploy Application"
+          requires:
+            - "Test Application"
+          filters:
+            branches:
+              only: main
 
 jobs:
-  checkout:
-    docker:
-      - image: cimg/node:lts
-    steps:
-      - checkout
-
-  install:
-    docker:
-      - image: cimg/node:lts
-    steps:
-      - run: npm ci
-
+  # Non-overrideable lint job - enforced by platform team
   lint:
     docker:
-      - image: cimg/node:lts
+      - image: cimg/node:20.11
     steps:
-      - run: npm run lint
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Run ESLint
+          command: npm run lint
+      - run:
+          name: Check code formatting
+          command: npm run format:check
 
-  test:
-    docker:
-      - image: cimg/node:lts
-    steps:
-      - run: npm test
-
+  # Default build job - can be overridden by teams
   build:
     docker:
-      - image: cimg/node:lts
+      - image: cimg/node:20.11
     steps:
-      - run: npm run build
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Build application
+          command: |
+            if npm run | grep -q "build"; then
+              npm run build
+            else
+              echo "No build script found, skipping build step"
+            fi
 
+  # Default test job - can be overridden by teams
+  test:
+    docker:
+      - image: cimg/node:20.11
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Run tests
+          command: npm test
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: test-results
+
+  # Default deploy job - can be overridden by teams
   deploy:
     docker:
-      - image: cimg/node:lts
+      - image: cimg/node:20.11
     steps:
-      - run: echo "Deploying Node.js app..."
+      - checkout
+      - run:
+          name: Deploy application
+          command: echo "Deploying Node.js application..."
 
-# Developers can override jobs or add new ones in their own repos as needed. 
+# Teams can override build, test, and deploy jobs in their team-config.yml
+# The lint job is enforced by the platform team and cannot be overridden 
