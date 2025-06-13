@@ -13,6 +13,13 @@ data "circleci_context" "existing_context" {
   id = "0731337b-c13e-402c-9159-4119e0240d19"
 }
 
+# Extract language from template name and construct config path
+locals {
+  # Extract language from template name (e.g., "python-starter-template" -> "python")
+  language = split("-", var.appteam_pipeline_profiles.application_template)[0]
+  config_path = "config-templates/${local.language}/config.yml"
+}
+
 # Create the GitHub repository first
 resource "github_repository" "new_repo" {
   name        = var.appteam_pipeline_profiles.application_name
@@ -67,7 +74,7 @@ resource "circleci_pipeline" "default" {
   project_id                       = circleci_project.team_project.id
   checkout_source_provider         = "github_app"
   checkout_source_repo_external_id = github_repository.new_repo.repo_id
-  config_source_file_path          = "config-templates/python/config.yml"
+  config_source_file_path          = local.config_path
   config_source_provider           = "github_app"
   config_source_repo_external_id   = data.github_repository.platform_configs_repo.repo_id
 }
