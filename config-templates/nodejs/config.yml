@@ -20,7 +20,7 @@ workflows:
       - build:
           name: "Build Application"
           override-with: team-config/build
-          context: shared-docker-publishing
+          context: share-docker-publishing
       # Test requires both lint and build to complete
       - test:
           name: "Test Application"
