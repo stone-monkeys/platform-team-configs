@@ -1,0 +1,233 @@
+version: 2.1
+
+orbs:
+  circleci-cli: circleci/circleci-cli@0.1.9
+  path-filtering: circleci/path-filtering@1.1.0
+
+parameters:
+  run-policy-workflow:
+    type: boolean
+    default: false
+  test-only:
+    type: boolean
+    default: false
+    description: "Run tests only, skip policy deployment (useful for testing changes)"
+  enable-config-policies:
+    type: boolean
+    default: false
+    description: "Enable or disable config policy evaluation for the organization"
+
+workflows:
+  # Path filtering workflow - runs on every commit
+  setup-workflow:
+    when:
+      not: << pipeline.parameters.run-policy-workflow >>
+    jobs:
+      - path-filtering/filter:
+          name: check-updated-files
+          mapping: |
+            policies/.* run-policy-workflow true
+          base-revision: main
+          config-path: .circleci/config-policies.yml
+
+  # Policy management workflow - runs only when policies/ folder changes
+  policy-workflow:
+    when: << pipeline.parameters.run-policy-workflow >>
+    jobs:
+      - list-current-policies:
+          context: policy-management
+          filters:
+            branches:
+              only: /.*/
+      
+      - test-policies:
+          context: policy-management
+          requires:
+            - list-current-policies
+          filters:
+            branches:
+              only: /.*/
+      
+      - diff-policy-bundle:
+          context: policy-management
+          requires:
+            - test-policies
+          filters:
+            branches:
+              ignore: main
+      
+      - push-policy-bundle:
+          context: policy-management
+          requires:
+            - test-policies
+          filters:
+            branches:
+              only: main
+      
+      - enable-disable-policies:
+          context: policy-management
+          requires:
+            - test-policies
+          filters:
+            branches:
+              only: /.*/
+
+  # Test-only workflow - can be triggered manually from UI
+  test-only-workflow:
+    when: << pipeline.parameters.test-only >>
+    jobs:
+      - list-current-policies:
+          context: policy-management
+      
+      - test-policies:
+          context: policy-management
+          requires:
+            - list-current-policies
+      
+      - diff-policy-bundle:
+          context: policy-management
+          requires:
+            - test-policies 
+
+jobs:
+  list-current-policies:
+    executor: circleci-cli/default
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: List current active policies
+          command: |
+            echo "=== Current Policy Settings ==="
+            circleci policy settings --owner-id $ORG_ID | tee policy-settings.json
+            echo ""
+            echo "=== Current Policy Bundle ==="
+            circleci policy fetch --owner-id $ORG_ID | tee policy-bundle.json || echo "No policy bundle found"
+      - store_artifacts:
+          path: policy-settings.json
+          destination: current-policy-settings.json
+      - store_artifacts:
+          path: policy-bundle.json
+          destination: current-policy-bundle.json
+
+  test-policies:
+    executor: circleci-cli/default
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Test policy bundle
+          command: |
+            echo "=== Testing Policy Bundle ==="
+            # Test with verbose output for debugging
+            circleci policy test ./policies/... --verbose
+            
+            echo ""
+            echo "=== Generating JUnit Test Results ==="
+            # Generate JUnit format for CircleCI test results
+            circleci policy test ./policies/... --format=junit > policy-test-results.xml
+            
+            echo ""
+            echo "=== Test Summary ==="
+            circleci policy test ./policies/... --format=json > policy-test-summary.json
+            
+            # Display summary
+            cat policy-test-summary.json
+      - store_test_results:
+          path: policy-test-results.xml
+      - store_artifacts:
+          path: policy-test-results.xml
+          destination: test-results/policy-test-results.xml
+      - store_artifacts:
+          path: policy-test-summary.json
+          destination: test-results/policy-test-summary.json
+
+  diff-policy-bundle:
+    executor: circleci-cli/default
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Show policy bundle diff
+          command: |
+            echo "=== Policy Bundle Diff ==="
+            echo "This shows what changes would be made to the active policies:"
+            echo ""
+            circleci policy diff ./policies --owner-id $ORG_ID | tee policy-diff.txt
+            
+            echo ""
+            echo "=== Diff Summary ==="
+            echo "The above diff shows the changes that would be applied when this branch is merged to main."
+      - store_artifacts:
+          path: policy-diff.txt
+          destination: policy-diff.txt
+
+  push-policy-bundle:
+    executor: circleci-cli/default
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Push policy bundle to CircleCI
+          command: |
+            echo "=== Pushing Policy Bundle ==="
+            echo "Deploying policies to organization: $ORG_ID"
+            echo ""
+            
+            # Push the policy bundle
+            circleci policy push ./policies --no-prompt --owner-id $ORG_ID | tee push-results.json
+            
+            echo ""
+            echo "=== Push Results ==="
+            cat push-results.json
+            
+            echo ""
+            echo "=== Verification - Fetch Updated Policy Bundle ==="
+            circleci policy fetch --owner-id $ORG_ID | tee updated-policy-bundle.json
+            
+            echo ""
+            echo "=== Updated Policy Settings ==="
+            circleci policy settings --owner-id $ORG_ID | tee updated-policy-settings.json
+      - store_artifacts:
+          path: push-results.json
+          destination: deployment/push-results.json
+      - store_artifacts:
+          path: updated-policy-bundle.json
+          destination: deployment/updated-policy-bundle.json
+      - store_artifacts:
+          path: updated-policy-settings.json
+          destination: deployment/updated-policy-settings.json
+
+  enable-disable-policies:
+    executor: circleci-cli/default
+    resource_class: small
+    steps:
+      - checkout
+      - when:
+          condition: << pipeline.parameters.enable-config-policies >>
+          steps:
+            - run:
+                name: Enable config policy evaluation
+                command: |
+                  echo "=== Enabling Config Policy Evaluation ==="
+                  circleci policy settings --enabled=true --owner-id $ORG_ID | tee enable-policies-result.json
+                  echo ""
+                  echo "=== Policy Evaluation Status ==="
+                  cat enable-policies-result.json
+            - store_artifacts:
+                path: enable-policies-result.json
+                destination: policy-settings/enable-policies-result.json
+      - unless:
+          condition: << pipeline.parameters.enable-config-policies >>
+          steps:
+            - run:
+                name: Disable config policy evaluation
+                command: |
+                  echo "=== Disabling Config Policy Evaluation ==="
+                  circleci policy settings --enabled=false --owner-id $ORG_ID | tee disable-policies-result.json
+                  echo ""
+                  echo "=== Policy Evaluation Status ==="
+                  cat disable-policies-result.json
+            - store_artifacts:
+                path: disable-policies-result.json
+                destination: policy-settings/disable-policies-result.json

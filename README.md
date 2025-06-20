@@ -7,6 +7,7 @@ Welcome to the **Platform Team's centralized repository for CircleCI configurati
 - **Automate**: Fully automated repository and CircleCI project creation via webhook triggers
 - **Empower**: Allow developer teams to inherit, override, and extend platform-defined CI/CD pipelines via GitHub repo templates.
 - **Standardize**: Ensure consistency, security, and quality across all projects while providing sensible defaults and flexibility.
+- **Govern**: Enforce organizational standards and security requirements through automated config policies.
 - **Own**: Enable the Platform Team to take ownership of CI/CD and automation, while still empowering developers to customize as needed.
 
 ## How It Works
@@ -57,6 +58,54 @@ GitHub Template Repos:     # Complete project templates
     └── package.json       # Standard dependencies
 ```
 
+### Config Policies & Governance
+
+The Platform Team maintains **CircleCI Config Policies** to enforce organizational standards and security requirements across all projects. These policies are written in **OPA (Open Policy Agent) Rego** and automatically validate CircleCI configurations when pipelines are triggered.
+
+#### **Policy Architecture**
+
+```
+policies/
+├── python-version/                 # Python version enforcement
+│   ├── python-minimum-version.rego     # Policy logic (OPA/Rego)
+│   ├── python-minimum-version_test.yaml # Comprehensive test cases
+│   └── README.md                        # Policy documentation
+└── orb-requirements/               # Required orb enforcement  
+    ├── team-config-required.rego       # Policy logic (OPA/Rego)
+    ├── team-config-required_test.yaml  # Comprehensive test cases
+    └── README.md                        # Policy documentation
+```
+
+#### **Active Policies**
+
+1. **Python Version Policy** (`python_minimum_version`)
+   - **Purpose**: Enforces minimum Python version (3.13.5) for `cimg/python:*` Docker images
+   - **Enforcement**: Soft warnings (builds continue but notify teams)
+   - **Scope**: Only applies to Python-based projects using CircleCI convenience images
+
+2. **Team-Config Orb Policy** (`team_config_required`)
+   - **Purpose**: Ensures all configurations include the required `team-config` orb
+   - **URL Validation**: Enforces that orb URLs end with `.circleci/team-config.yml`
+   - **Enforcement**: Hard violations (blocks builds) for missing/invalid orbs
+   - **Scope**: All CircleCI configurations organization-wide
+
+#### **Policy Management Workflow**
+
+- **Automated Testing**: All policies include comprehensive test suites with 15+ test cases
+- **CI/CD Pipeline**: Dedicated pipeline (`.circleci/config-policies.yml`) for policy management
+- **Path Filtering**: Only runs when `policies/` directory changes (efficient)
+- **Manual Triggers**: Can be triggered from CircleCI UI for testing and deployment
+- **Deployment**: Policies are automatically deployed to CircleCI on main branch merges
+
+#### **Policy Development Process**
+
+1. **Policy Creation**: Write Rego policy with comprehensive test coverage
+2. **Local Testing**: Test policies locally using `circleci policy test`
+3. **Feature Branch**: Create branch and push policy changes
+4. **Automated Testing**: Pipeline runs tests and shows policy diff
+5. **Review & Merge**: Code review and merge to main branch
+6. **Automatic Deployment**: Policies are pushed to CircleCI organization
+
 ### Automated Project Creation
 
 1. **IDP Trigger**: Development teams request new projects through Internal Developer Portals (Port, Cortex, Backstage, etc.)
@@ -67,8 +116,9 @@ GitHub Template Repos:     # Complete project templates
    - Sets up CircleCI project and pipeline configuration
    - Configures contexts and environment variables
    - Applies project restrictions to existing contexts
-4. **Initial CI/CD Trigger**: An empty commit is automatically pushed to trigger the first CI/CD pipeline
-5. **Ready to Use**: Teams receive a fully configured repository with working CI/CD pipeline that follows platform standards but allows developer customization
+4. **Policy Enforcement**: All new projects are automatically subject to organization-wide config policies
+5. **Initial CI/CD Trigger**: An empty commit is automatically pushed to trigger the first CI/CD pipeline
+6. **Ready to Use**: Teams receive a fully configured repository with working CI/CD pipeline that follows platform standards but allows developer customization
 
 ### Template-Based Architecture
 - **Config Templates**: Platform-managed CircleCI pipeline definitions in `config-templates/`
@@ -89,17 +139,28 @@ terraform/
       ├── outputs.tf               # Output definitions
       └── providers.tf             # Provider configurations
 .circleci/
-  └── provision.yml                # Main automation pipeline (webhook-triggered)
-  └── deprovision.yml              # Separate pipeline for resource cleanup
+  ├── provision.yml                # Main automation pipeline (webhook-triggered)
+  ├── deprovision.yml              # Separate pipeline for resource cleanup
+  └── config-policies.yml          # Policy management CI/CD pipeline
+policies/                          # CircleCI Config Policies (OPA/Rego)
+  ├── python-version/              # Python version enforcement policy
+  │   ├── python-minimum-version.rego
+  │   ├── python-minimum-version_test.yaml
+  │   └── README.md
+  └── orb-requirements/            # Required orb enforcement policy
+      ├── team-config-required.rego
+      ├── team-config-required_test.yaml
+      └── README.md
 docs/
-  ├── best-practices.md        # CI/CD best practices
-  ├── override-examples.md     # How to override jobs in your repo
+  ├── best-practices.md            # CI/CD best practices
+  ├── override-examples.md         # How to override jobs in your repo
   └── ...
-config-templates/              # Platform-managed CircleCI pipeline templates
-                                 # Define overall pipeline structure, security, and deployment jobs
-                                 # Referenced by GitHub template repositories
+config-templates/                  # Platform-managed CircleCI pipeline templates
+                                   # Define overall pipeline structure, security, and deployment jobs
+                                   # Referenced by GitHub template repositories
 README.md
 CONTRIBUTING.md
+POLICY-PIPELINE-SETUP.md          # Policy management setup and usage guide
 ```
 
 ## Key Components
@@ -133,6 +194,13 @@ orbs:
 - **Context Management**: Applies project restrictions to existing contexts for security
 - **Environment Configuration**: Sets up all necessary environment variables and secrets
 
+### Config Policy Management
+- **Policy Development**: OPA/Rego policies with comprehensive test coverage (15+ test cases)
+- **Automated Testing**: Dedicated CI/CD pipeline with JUnit integration
+- **Manual Controls**: UI-triggered testing, deployment, and policy enable/disable
+- **Path Filtering**: Efficient pipeline execution only when policies change
+- **Governance**: Organization-wide enforcement of security and compliance standards
+
 ### Webhook-Driven Workflows
 - **Provision Pipeline**: Triggered by webhooks to create new projects
 - **Deprovision Pipeline**: API-triggered for resource cleanup
@@ -147,12 +215,19 @@ orbs:
    - Changes are immediately available (no publishing required)
    - Ensure URL is in organization's orb allow-list
 
-2. **Manage Terraform Infrastructure:**
+2. **Manage Config Policies:**
+   - Develop and maintain OPA/Rego policies in `policies/` directory
+   - Write comprehensive test coverage for all policies
+   - Use the dedicated policy pipeline (`.circleci/config-policies.yml`) for testing and deployment
+   - Control policy enforcement via CircleCI UI parameters
+   - See [POLICY-PIPELINE-SETUP.md](POLICY-PIPELINE-SETUP.md) for detailed setup and usage
+
+3. **Manage Terraform Infrastructure:**
    - Update automation in `terraform/pipeline-terraform/`
    - Modify template repository references as needed
    - Update context and environment variable configurations
 
-3. **Template Repository Management:**
+4. **Template Repository Management:**
    - Create/maintain separate template repositories: `<technology>-starter-template`
    - Ensure templates include proper `.circleci/config.yml` configurations
    - Follow naming conventions for automatic discovery
@@ -229,11 +304,18 @@ For more information about URL orbs, see the [CircleCI URL Orb Documentation](ht
 
 The automation requires these environment variables (configured in CircleCI contexts):
 
+### Project Automation Context
 - `GITHUB_TOKEN`: GitHub authentication token
 - `CIRCLE_TOKEN`: CircleCI API token  
 - `AWS_ACCOUNT_ID`: AWS account for Terraform state
 - `AWS_IAM_PREFIX`: IAM role prefix for AWS authentication
 - `GITHUB_ORG`: GitHub organization name
+
+### Policy Management Context (`policy-management`)
+- `CIRCLECI_CLI_TOKEN`: Personal API token for CLI authentication
+- `ORG_ID`: CircleCI organization ID for policy operations
+
+**Note**: The `policy-management` context should be restricted to authorized groups (Platform Team, DevOps) for security.
 
 ## Contributing
 

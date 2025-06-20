@@ -1,0 +1,85 @@
+package org
+
+# Policy name for CircleCI
+policy_name["python_minimum_version"]
+
+# Minimum required Python version
+minimum_python_version := "3.13.5"
+
+# Helper function to extract version from image tag
+extract_version(image) := version {
+    # Check if image starts with cimg/python:
+    startswith(image, "cimg/python:")
+    
+    # Extract the version part after the colon
+    parts := split(image, ":")
+    count(parts) == 2
+    version := parts[1]
+}
+
+# Helper function to parse version string into comparable array
+parse_version(version_str) := version_parts {
+    parts := split(version_str, ".")
+    version_parts := [to_number(part) | part := parts[_]]
+}
+
+# Helper function to compare versions
+# Returns true if version1 < version2
+version_less_than(version1, version2) {
+    v1 := parse_version(version1)
+    v2 := parse_version(version2)
+    
+    # Compare major version
+    v1[0] < v2[0]
+}
+
+version_less_than(version1, version2) {
+    v1 := parse_version(version1)
+    v2 := parse_version(version2)
+    
+    # Same major version, compare minor
+    v1[0] == v2[0]
+    v1[1] < v2[1]
+}
+
+version_less_than(version1, version2) {
+    v1 := parse_version(version1)
+    v2 := parse_version(version2)
+    
+    # Same major and minor version, compare patch
+    v1[0] == v2[0]
+    v1[1] == v2[1]
+    v1[2] < v2[2]
+}
+
+# Soft warning for Python versions below minimum
+warnings[msg] {
+    # Check all jobs in the configuration
+    some job_name
+    job := input.jobs[job_name]
+    
+    # Check each docker image in the job
+    docker_config := job.docker[_]
+    
+    # Extract version from cimg/python images
+    python_version := extract_version(docker_config.image)
+    
+    # Check if version is below minimum
+    version_less_than(python_version, minimum_python_version)
+    
+    msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Please update to cimg/python:%s or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version, minimum_python_version])
+}
+
+# Hard violation - currently disabled, but can be enabled by changing to violations[msg]
+# violations[msg] {
+#     some job_name
+#     job := input.jobs[job_name]
+#     
+#     docker_config := job.docker[_]
+#     
+#     python_version := extract_version(docker_config.image)
+#     
+#     version_less_than(python_version, minimum_python_version)
+#     
+#     msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Build blocked. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version])
+# } 

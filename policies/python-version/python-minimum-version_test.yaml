@@ -1,0 +1,84 @@
+# Test for Python minimum version policy
+test_python_version_policy:
+  # Test with valid Python versions - should pass
+  input:
+    version: 2.1
+    jobs:
+      build:
+        docker:
+          - image: cimg/python:3.13.5
+      test:
+        docker:
+          - image: cimg/python:3.14.0
+  decision: &root_decision
+    status: PASS
+  
+  cases:
+    # Test with Python version below minimum - should generate warnings
+    python_version_too_low:
+      input:
+        jobs:
+          build:
+            docker:
+              - image: cimg/python:3.13.4
+      decision:
+        <<: *root_decision
+        status: PASS  # Warnings don't fail the build
+        # Note: For warnings, we expect status: PASS but the policy will generate warnings
+        # CircleCI's test framework doesn't directly test warnings in the decision object
+        # Warnings are handled separately from hard failures
+    
+    # Test with much older Python version
+    python_version_very_old:
+      input:
+        jobs:
+          build:
+            docker:
+              - image: cimg/python:3.12.0
+          test:
+            docker:
+              - image: cimg/python:3.11.5
+      decision:
+        <<: *root_decision
+        status: PASS  # Still passes because it's a warning policy
+    
+    # Test with non-Python images - should be ignored
+    non_python_images:
+      input:
+        jobs:
+          build:
+            docker:
+              - image: cimg/node:20.11
+          test:
+            docker:
+              - image: cimg/base:stable
+      decision:
+        <<: *root_decision
+        status: PASS
+    
+    # Test with mixed Python and non-Python images
+    mixed_images:
+      input:
+        jobs:
+          python_job:
+            docker:
+              - image: cimg/python:3.13.4  # Should warn
+          node_job:
+            docker:
+              - image: cimg/node:20.11     # Should ignore
+          valid_python_job:
+            docker:
+              - image: cimg/python:3.13.5  # Should pass
+      decision:
+        <<: *root_decision
+        status: PASS
+    
+    # Test with no jobs - should pass
+    no_jobs:
+      input:
+        workflows:
+          build:
+            jobs: []
+      decision:
+        <<: *root_decision
+        status: PASS 
