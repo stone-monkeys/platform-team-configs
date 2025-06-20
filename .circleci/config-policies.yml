@@ -33,6 +33,21 @@ workflows:
           pre-steps:
             - checkout
             - run:
+                name: Debug pipeline information
+                command: |
+                  echo "=== Pipeline Debug Information ==="
+                  echo "Pipeline ID: $CIRCLE_PIPELINE_ID"
+                  echo "Pipeline Number: $CIRCLE_PIPELINE_NUMBER"
+                  echo "Pipeline Event: << pipeline.event.name >>"
+                  echo "Pipeline Trigger: << pipeline.trigger_source >>"
+                  echo "Git Branch: $CIRCLE_BRANCH"
+                  echo "Git SHA: $CIRCLE_SHA1"
+                  echo "Project: $CIRCLE_PROJECT_REPONAME"
+                  echo "Build Number: $CIRCLE_BUILD_NUM"
+                  echo "Workflow ID: $CIRCLE_WORKFLOW_ID"
+                  echo "Job: $CIRCLE_JOB"
+                  echo "=== End Pipeline Debug ==="
+            - run:
                 name: Generate continuation config without setup flag
                 command: |
                   echo "=== Generating continuation config ==="
