@@ -11,14 +11,11 @@ parameters:
     type: boolean
     default: false
     description: "Run tests only, skip policy deployment (useful for testing changes)"
-  enable-config-policies:
-    type: boolean
-    default: false
-    description: "Enable or disable config policy evaluation for the organization"
-  manage-policy-settings:
-    type: boolean
-    default: false
-    description: "Trigger the policy settings management workflow"
+  toggle-policy-evaluation:
+    type: enum
+    enum: ["enable", "disable", ""]
+    default: ""
+    description: "Toggle policy evaluation: 'enable' to turn on, 'disable' to turn off, empty string to skip"
 
 workflows:
   # Policy management workflow - runs only when policies/ folder changes
@@ -72,9 +69,11 @@ workflows:
           requires:
             - test-policies
 
-  # Enable/Disable policies workflow - can be triggered manually from UI
+  # Enable/Disable policies workflow - runs when toggle parameter is set to enable or disable
   policy-settings-workflow:
-    when: << pipeline.parameters.manage-policy-settings >>
+    when:
+      not:
+        equal: ["", << pipeline.parameters.toggle-policy-evaluation >>]
     jobs:
       - enable-disable-policies:
           context: policy-management 
@@ -209,7 +208,8 @@ jobs:
       - circleci-cli/install
       - circleci-cli/setup
       - when:
-          condition: << pipeline.parameters.enable-config-policies >>
+          condition:
+            equal: ["enable", << pipeline.parameters.toggle-policy-evaluation >>]
           steps:
             - run:
                 name: Enable config policy evaluation
@@ -222,8 +222,9 @@ jobs:
             - store_artifacts:
                 path: enable-policies-result.json
                 destination: policy-settings/enable-policies-result.json
-      - unless:
-          condition: << pipeline.parameters.enable-config-policies >>
+      - when:
+          condition:
+            equal: ["disable", << pipeline.parameters.toggle-policy-evaluation >>]
           steps:
             - run:
                 name: Disable config policy evaluation
