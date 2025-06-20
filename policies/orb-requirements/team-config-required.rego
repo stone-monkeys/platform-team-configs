@@ -16,7 +16,21 @@ excluded_projects := {
 
 # Helper function to check if current project should be excluded
 is_project_excluded {
-    excluded_projects[input.meta.project_id]
+    # Check multiple possible locations for project ID
+    project_id := input.meta.project_id
+    excluded_projects[project_id]
+}
+
+is_project_excluded {
+    # Alternative: check if project ID is in different location
+    project_id := input.project_id
+    excluded_projects[project_id]
+}
+
+is_project_excluded {
+    # Alternative: check if project ID is in context
+    project_id := input.context.project_id
+    excluded_projects[project_id]
 }
 
 # Check if the required orb is present in the configuration
