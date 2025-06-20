@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   circleci-cli: circleci/circleci-cli@0.1.9
-  path-filtering: circleci/path-filtering@1.1.0
+  path-filtering: circleci/path-filtering@2.0.1
 
 parameters:
   run-policy-workflow:
@@ -91,10 +91,13 @@ workflows:
 
 jobs:
   list-current-policies:
-    executor: circleci-cli/default
+    docker:
+      - image: cimg/base:current
     resource_class: small
     steps:
       - checkout
+      - circleci-cli/install
+      - circleci-cli/setup
       - run:
           name: List current active policies
           command: |
@@ -111,10 +114,13 @@ jobs:
           destination: current-policy-bundle.json
 
   test-policies:
-    executor: circleci-cli/default
+    docker:
+      - image: cimg/base:current
     resource_class: small
     steps:
       - checkout
+      - circleci-cli/install
+      - circleci-cli/setup
       - run:
           name: Test policy bundle
           command: |
@@ -143,10 +149,13 @@ jobs:
           destination: test-results/policy-test-summary.json
 
   diff-policy-bundle:
-    executor: circleci-cli/default
+    docker:
+      - image: cimg/base:current
     resource_class: small
     steps:
       - checkout
+      - circleci-cli/install
+      - circleci-cli/setup
       - run:
           name: Show policy bundle diff
           command: |
@@ -163,10 +172,13 @@ jobs:
           destination: policy-diff.txt
 
   push-policy-bundle:
-    executor: circleci-cli/default
+    docker:
+      - image: cimg/base:current
     resource_class: small
     steps:
       - checkout
+      - circleci-cli/install
+      - circleci-cli/setup
       - run:
           name: Push policy bundle to CircleCI
           command: |
@@ -199,10 +211,13 @@ jobs:
           destination: deployment/updated-policy-settings.json
 
   enable-disable-policies:
-    executor: circleci-cli/default
+    docker:
+      - image: cimg/base:current
     resource_class: small
     steps:
       - checkout
+      - circleci-cli/install
+      - circleci-cli/setup
       - when:
           condition: << pipeline.parameters.enable-config-policies >>
           steps:
