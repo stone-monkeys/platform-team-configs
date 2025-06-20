@@ -28,7 +28,7 @@ workflows:
       - path-filtering/filter:
           name: check-updated-files
           mapping: |
-            policies/.* run-policy-workflow true .circleci/continue-config.yml
+            policies/.* run-policy-workflow true .circleci/continue_config.yml
           base-revision: main
           pre-steps:
             - checkout
@@ -47,12 +47,12 @@ workflows:
                   chmod 755 .circleci
                   
                   # Create a modified version of the config without setup: true
-                  sed '/^setup: true$/d' .circleci/config-policies.yml > .circleci/continue-config.yml
+                  sed '/^setup: true$/d' .circleci/config-policies.yml > .circleci/continue_config.yml
                   
                   echo "=== Continuation config created ==="
-                  echo "File size: $(wc -l < .circleci/continue-config.yml) lines"
+                  echo "File size: $(wc -l < .circleci/continue_config.yml) lines"
                   echo "First 10 lines:"
-                  head -10 .circleci/continue-config.yml
+                  head -10 .circleci/continue_config.yml
 
   # Policy management workflow - runs only when policies/ folder changes
   policy-workflow:
