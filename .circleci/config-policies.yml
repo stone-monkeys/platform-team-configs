@@ -31,6 +31,7 @@ workflows:
             policies/.* run-policy-workflow true .circleci/continue-config.yml
           base-revision: main
           pre-steps:
+            - checkout
             - run:
                 name: Generate continuation config without setup flag
                 command: |
