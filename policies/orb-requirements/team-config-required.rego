@@ -9,6 +9,16 @@ enable_rule["team_config_required"]
 # Required orb name
 required_orb_name := "team-config"
 
+# Excluded project IDs - these projects will be skipped by this policy
+excluded_projects := {
+    "e3914273-2713-4f0f-999d-f9fbd6748cf8"
+}
+
+# Helper function to check if current project should be excluded
+is_project_excluded {
+    excluded_projects[input.meta.project_id]
+}
+
 # Check if the required orb is present in the configuration
 has_team_config_orb {
     # Check if orbs section exists and contains team-config
@@ -26,6 +36,9 @@ has_valid_team_config_url {
 
 # Hard failure rule for missing team-config orb
 hard_fail["team_config_required"] {
+    # Skip if this project is excluded
+    not is_project_excluded
+    
     # Only check if orbs section exists
     input.orbs
     
@@ -35,6 +48,9 @@ hard_fail["team_config_required"] {
 
 # Hard failure rule for invalid team-config orb URL
 hard_fail["team_config_required"] {
+    # Skip if this project is excluded
+    not is_project_excluded
+    
     # team-config orb exists
     has_team_config_orb
     
@@ -63,6 +79,9 @@ team_config_required := msg {
 
 # Warning for configurations without any orbs section
 warnings[msg] {
+    # Skip if this project is excluded
+    not is_project_excluded
+    
     # No orbs section at all
     not input.orbs
     

@@ -122,4 +122,20 @@ test_team_config_orb_policy:
         enabled_rules: [team_config_required]
         hard_failures:
           - rule: team_config_required
-            reason: "The 'team-config' orb URL 'https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/config.yml' must end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md" 
+            reason: "The 'team-config' orb URL 'https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/config.yml' must end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
+    
+    # Test excluded project without team-config orb - should pass
+    excluded_project_no_orb:
+      input:
+        meta:
+          project_id: "e3914273-2713-4f0f-999d-f9fbd6748cf8"
+        version: 2.1
+        orbs:
+          docker: circleci/docker@2.8.2
+        jobs:
+          build:
+            docker:
+              - image: cimg/base:stable
+      decision:
+        status: PASS
+        enabled_rules: [team_config_required] 

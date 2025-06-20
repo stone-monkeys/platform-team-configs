@@ -81,4 +81,17 @@ test_python_version_policy:
             jobs: []
       decision:
         <<: *root_decision
+        status: PASS
+    
+    # Test excluded project with old Python version - should pass without warnings
+    excluded_project_old_python:
+      input:
+        meta:
+          project_id: "e3914273-2713-4f0f-999d-f9fbd6748cf8"
+        jobs:
+          build:
+            docker:
+              - image: cimg/python:3.11.0
+      decision:
+        <<: *root_decision
         status: PASS 

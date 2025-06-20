@@ -6,6 +6,16 @@ policy_name["python_minimum_version"]
 # Minimum required Python version
 minimum_python_version := "3.13.5"
 
+# Excluded project IDs - these projects will be skipped by this policy
+excluded_projects := {
+    "e3914273-2713-4f0f-999d-f9fbd6748cf8"
+}
+
+# Helper function to check if current project should be excluded
+is_project_excluded {
+    excluded_projects[input.meta.project_id]
+}
+
 # Helper function to extract version from image tag
 extract_version(image) := version {
     # Check if image starts with cimg/python:
@@ -54,6 +64,9 @@ version_less_than(version1, version2) {
 
 # Soft warning for Python versions below minimum
 warnings[msg] {
+    # Skip if this project is excluded
+    not is_project_excluded
+    
     # Check all jobs in the configuration
     some job_name
     job := input.jobs[job_name]
