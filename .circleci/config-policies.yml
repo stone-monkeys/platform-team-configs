@@ -28,9 +28,17 @@ workflows:
       - path-filtering/filter:
           name: check-updated-files
           mapping: |
-            policies/.* run-policy-workflow true
+            policies/.* run-policy-workflow true .circleci/continue-config.yml
           base-revision: main
-          config-path: .circleci/config-policies.yml
+          pre-steps:
+            - run:
+                name: Generate continuation config without setup flag
+                command: |
+                  echo "=== Generating continuation config ==="
+                  # Create a modified version of the config without setup: true
+                  sed '/^setup: true$/d' .circleci/config-policies.yml > .circleci/continue-config.yml
+                  echo "=== Continuation config created ==="
+                  head -10 .circleci/continue-config.yml
 
   # Policy management workflow - runs only when policies/ folder changes
   policy-workflow:
