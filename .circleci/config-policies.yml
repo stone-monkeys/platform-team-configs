@@ -15,6 +15,10 @@ parameters:
     type: boolean
     default: false
     description: "Enable or disable config policy evaluation for the organization"
+  manage-policy-settings:
+    type: boolean
+    default: false
+    description: "Trigger the policy settings management workflow"
 
 workflows:
   # Policy management workflow - runs only when policies/ folder changes
@@ -50,14 +54,6 @@ workflows:
           filters:
             branches:
               only: main
-      
-      - enable-disable-policies:
-          context: policy-management
-          requires:
-            - test-policies
-          filters:
-            branches:
-              only: /.*/
 
   # Test-only workflow - can be triggered manually from UI
   test-only-workflow:
@@ -74,7 +70,14 @@ workflows:
       - diff-policy-bundle:
           context: policy-management
           requires:
-            - test-policies 
+            - test-policies
+
+  # Enable/Disable policies workflow - can be triggered manually from UI
+  policy-settings-workflow:
+    when: << pipeline.parameters.manage-policy-settings >>
+    jobs:
+      - enable-disable-policies:
+          context: policy-management 
 
 jobs:
   list-current-policies:
