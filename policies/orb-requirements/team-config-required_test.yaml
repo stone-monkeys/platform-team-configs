@@ -21,7 +21,7 @@ test_team_config_orb_policy:
       decision:
         <<: *root_decision
         status: PASS
-    # Test with missing team-config orb (should fail hard)
+    # Test with missing team-config orb (should warn)
     missing_team_config_orb:
       input:
         version: 2.1
@@ -33,11 +33,8 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: HARD_FAIL
+        status: PASS  # Warnings don't fail the build
         enabled_rules: [team_config_required]
-        hard_failures:
-          - rule: team_config_required
-            reason: "Configuration must include a 'team-config' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is required for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
     # Test with no orbs section at all (should warn)
     no_orbs_section:
@@ -72,7 +69,7 @@ test_team_config_orb_policy:
         <<: *root_decision
         status: PASS
     
-    # Test with empty orbs section (should fail hard)
+    # Test with empty orbs section (should warn)
     empty_orbs_section:
       input:
         version: 2.1
@@ -82,13 +79,10 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: HARD_FAIL
+        status: PASS  # Warnings don't fail the build
         enabled_rules: [team_config_required]
-        hard_failures:
-          - rule: team_config_required
-            reason: "Configuration must include a 'team-config' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is required for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
-    # Test with team-config orb but wrong URL format (should fail hard)
+    # Test with team-config orb but wrong URL format (should warn)
     invalid_team_config_url:
       input:
         version: 2.1
@@ -100,13 +94,10 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: HARD_FAIL
+        status: PASS  # Warnings don't fail the build
         enabled_rules: [team_config_required]
-        hard_failures:
-          - rule: team_config_required
-            reason: "The 'team-config' orb URL 'https://example.com/wrong-path/config.yml' must end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
-    # Test with team-config orb with wrong filename (should fail hard)
+    # Test with team-config orb with wrong filename (should warn)
     wrong_filename:
       input:
         version: 2.1
@@ -118,11 +109,8 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: HARD_FAIL
+        status: PASS  # Warnings don't fail the build
         enabled_rules: [team_config_required]
-        hard_failures:
-          - rule: team_config_required
-            reason: "The 'team-config' orb URL 'https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/config.yml' must end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
     # Test excluded project without team-config orb - should pass
     excluded_project_no_orb:

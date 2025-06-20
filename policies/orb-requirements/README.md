@@ -6,7 +6,7 @@ This policy enforces that all CircleCI configurations include a `team-config` or
 
 - **Package**: `org`
 - **Policy Name**: `team_config_required`
-- **Type**: Hard violation (blocks builds) + Soft warning (for missing orbs section)
+- **Type**: Soft warning (build continues with warnings)
 - **Required Orb**: `team-config`
 - **Required URL Format**: Must end with `.circleci/team-config.yml`
 - **Target**: All CircleCI configurations
@@ -15,19 +15,17 @@ This policy enforces that all CircleCI configurations include a `team-config` or
 
 The policy:
 1. Scans the `orbs` section of CircleCI configurations
-2. **Hard Violation**: If `orbs` section exists but `team-config` orb is missing
-3. **Hard Violation**: If `team-config` orb exists but URL doesn't end with `.circleci/team-config.yml`
+2. **Soft Warning**: If `orbs` section exists but `team-config` orb is missing
+3. **Soft Warning**: If `team-config` orb exists but URL doesn't end with `.circleci/team-config.yml`
 4. **Soft Warning**: If no `orbs` section exists at all
 5. **Pass**: If `team-config` orb is present with correct URL format
 
 ## Enforcement Levels
 
-### 🚫 **Hard Violation (Blocks Build)**
+### ⚠️ **Soft Warning (Build Continues)**
 - Configuration has `orbs` section but missing `team-config`
 - Empty `orbs` section (`orbs: {}`)
 - `team-config` orb present but URL doesn't end with `.circleci/team-config.yml`
-
-### ⚠️ **Soft Warning (Build Continues)**
 - No `orbs` section in configuration
 
 ### ✅ **Pass**
@@ -61,30 +59,28 @@ jobs:
       - image: cimg/python:3.13.5
 ```
 
-### 🚫 Invalid Configurations (Hard Fail)
+### ⚠️ Warning Configurations (Soft Warning)
 
 **Missing team-config orb:**
 ```yaml
 version: 2.1
 orbs:
   docker: circleci/docker@2.8.2
-  python: circleci/python@3.1.0  # Missing team-config - HARD FAIL
+  python: circleci/python@3.1.0  # Missing team-config - WARNING
 ```
 
 **Empty orbs section:**
 ```yaml
 version: 2.1
-orbs: {}  # Empty orbs section - HARD FAIL
+orbs: {}  # Empty orbs section - WARNING
 ```
 
 **Wrong URL format:**
 ```yaml
 version: 2.1
 orbs:
-  team-config: "https://example.com/wrong-path/config.yml"  # Wrong URL format - HARD FAIL
+  team-config: "https://example.com/wrong-path/config.yml"  # Wrong URL format - WARNING
 ```
-
-### ⚠️ Warning Configuration (Soft Warning)
 
 **No orbs section:**
 ```yaml
@@ -98,25 +94,25 @@ jobs:
 
 ## Message Formats
 
-### Hard Violation Messages
+### Warning Messages
 
 **Missing team-config orb:**
 ```
-Configuration must include a 'team-config' orb that references '.circleci/team-config.yml'. 
-This orb provides platform-managed overrides and is required for all projects. For help, 
+Configuration should include a 'team-config' orb that references '.circleci/team-config.yml'. 
+This orb provides platform-managed overrides and is recommended for all projects. For help, 
 contact the Platform team or see 
 https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md
 ```
 
 **Invalid URL format:**
 ```
-The 'team-config' orb URL 'https://example.com/wrong-path/config.yml' must end with 
+The 'team-config' orb URL 'https://example.com/wrong-path/config.yml' should end with 
 '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform 
 team or see 
 https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md
 ```
 
-### Warning Message
+**No orbs section:**
 ```
 Configuration should include an 'orbs' section with the required 'team-config' orb. 
 For help, contact the Platform team or see 
@@ -175,13 +171,14 @@ This policy works with your existing platform setup:
 - **URL Orbs**: Teams reference their own `team-config.yml` via URL orbs
 - **Override Mechanism**: Teams can override specific jobs while maintaining platform compliance
 
-## Converting to Soft Warning
+## Policy Behavior
 
-To make this a soft warning policy instead of hard violation:
+This policy is configured as a **soft warning** policy, meaning:
 
-1. Change `violations[msg]` to `warnings[msg]` in the policy file
-2. Update tests to expect `status: PASS` instead of `status: HARD_FAIL`
-3. Test thoroughly before applying to production
+1. Violations generate warnings but do not block builds
+2. Teams can see the warnings in their CircleCI UI
+3. Platform team can monitor compliance without disrupting development
+4. Builds continue to run even when policy conditions are not met
 
 ## Troubleshooting
 
