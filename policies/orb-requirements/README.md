@@ -1,6 +1,6 @@
 # Team-Config Orb Requirement Policy
 
-This policy enforces that all CircleCI configurations include a `team-config` orb with the correct URL format, which provides platform-managed overrides and standardized functionality.
+This policy enforces that CircleCI configurations using orbs include a `team-config` orb with the correct URL format. The policy provides platform-managed overrides and standardized functionality for teams already using orbs.
 
 ## Policy Details
 
@@ -9,15 +9,38 @@ This policy enforces that all CircleCI configurations include a `team-config` or
 - **Type**: Soft warning (build continues with warnings)
 - **Required Orb**: `team-config`
 - **Required URL Format**: Must end with `.circleci/team-config.yml`
-- **Target**: All CircleCI configurations
+- **Scope**: Only configurations that already use orbs
+- **Enabled Rules**: `team_config_missing`, `team_config_invalid_url`
+
+## What the Policy DOES Cover ✅
+
+**Scope:** Only checks CircleCI configurations that already use orbs (has an `orbs:` section)
+
+**Enforcement:**
+1. **Missing team-config orb** - Warns when a configuration has orbs but is missing the required `team-config` orb
+2. **Invalid URL format** - Warns when the `team-config` orb exists but the URL doesn't end with `.circleci/team-config.yml`
+
+**Policy Behavior:**
+- **Soft warnings only** - Builds continue, but warnings are displayed
+- **Project exclusion** - Skips enforcement for excluded project ID: `e3914273-2713-4f0f-999d-f9fbd6748cf8`
+- **Helpful messaging** - Provides contact information and documentation links in warning messages
+
+## What the Policy DOES NOT Cover ❌
+
+**Out of Scope:**
+1. **Configurations without orbs** - If a project has no `orbs:` section at all, the policy ignores it completely
+2. **Hard enforcement** - Policy never blocks/fails builds, only provides warnings
+3. **URL content validation** - Doesn't check if the URL actually exists or contains valid configuration
+4. **Orb version requirements** - Doesn't enforce specific versions of the team-config orb
+5. **Other orb requirements** - Only focuses on the `team-config` orb, ignores other orbs
 
 ## How It Works
 
 The policy:
-1. Scans the `orbs` section of CircleCI configurations
-2. **Soft Warning**: If `orbs` section exists but `team-config` orb is missing
-3. **Soft Warning**: If `team-config` orb exists but URL doesn't end with `.circleci/team-config.yml`
-4. **Soft Warning**: If no `orbs` section exists at all
+1. Scans configurations for an `orbs` section
+2. **Ignores** configurations with no `orbs` section (they pass automatically)
+3. **Soft Warning**: If `orbs` section exists but `team-config` orb is missing
+4. **Soft Warning**: If `team-config` orb exists but URL doesn't end with `.circleci/team-config.yml`
 5. **Pass**: If `team-config` orb is present with correct URL format
 
 ## Enforcement Levels
@@ -26,10 +49,13 @@ The policy:
 - Configuration has `orbs` section but missing `team-config`
 - Empty `orbs` section (`orbs: {}`)
 - `team-config` orb present but URL doesn't end with `.circleci/team-config.yml`
-- No `orbs` section in configuration
 
 ### ✅ **Pass**
 - `team-config` orb is present with correct URL format
+- **No `orbs` section at all** (policy doesn't apply)
+
+### 🚫 **Excluded**
+- Project ID: `e3914273-2713-4f0f-999d-f9fbd6748cf8` (policy skipped entirely)
 
 ## Examples
 
@@ -59,6 +85,16 @@ jobs:
       - image: cimg/python:3.13.5
 ```
 
+**No orbs section (policy doesn't apply):**
+```yaml
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: cimg/base:stable
+# No orbs section - PASSES (policy doesn't apply)
+```
+
 ### ⚠️ Warning Configurations (Soft Warning)
 
 **Missing team-config orb:**
@@ -82,16 +118,6 @@ orbs:
   team-config: "https://example.com/wrong-path/config.yml"  # Wrong URL format - WARNING
 ```
 
-**No orbs section:**
-```yaml
-version: 2.1
-jobs:
-  build:
-    docker:
-      - image: cimg/base:stable
-# No orbs section - WARNING
-```
-
 ## Message Formats
 
 ### Warning Messages
@@ -112,13 +138,6 @@ team or see
 https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md
 ```
 
-**No orbs section:**
-```
-Configuration should include an 'orbs' section with the required 'team-config' orb. 
-For help, contact the Platform team or see 
-https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md
-```
-
 ## Testing
 
 To test this policy locally using CircleCI's native testing framework:
@@ -136,27 +155,49 @@ To test this policy locally using CircleCI's native testing framework:
    circleci policy test ./policies/...
    ```
 
-3. **Run specific test cases**:
-   ```bash
-   # Run only tests matching a pattern
-   circleci policy test ./policies/orb-requirements --run "missing_team_config_orb"
-   
-   # Debug test execution
-   circleci policy test ./policies/orb-requirements --debug
-   ```
+3. **Current test coverage**: 9/9 tests passing
+   - Valid configurations with correct team-config orb
+   - Missing team-config orb scenarios
+   - Invalid URL format scenarios
+   - Empty orbs sections
+   - Excluded project scenarios
 
 ## Configuration
 
-To change the required orb name, update the `required_orb_name` constant in `team-config-required.rego`:
+### Project Exclusions
+
+To exclude additional projects from this policy, update the `excluded_projects` set in `team-config-required.rego`:
+
+```rego
+# Add project IDs that should be excluded from this policy
+excluded_projects := {
+    "e3914273-2713-4f0f-999d-f9fbd6748cf8",
+    "your-project-id-here"
+}
+```
+
+### Required Orb Name
+
+To change the required orb name, update the `required_orb_name` constant:
 
 ```rego
 # Change this value to update the required orb name
 required_orb_name := "team-config"
 ```
 
+## Design Philosophy
+
+This policy follows a **pragmatic approach**:
+
+- **Non-intrusive** - Doesn't force teams to add orbs if they don't need them
+- **Guidance-focused** - Provides warnings and guidance rather than blocking builds
+- **Practical scope** - Only enforces the rule where it makes sense (when orbs are already being used)
+
+This balances platform governance with team autonomy - it ensures teams using orbs follow platform conventions without forcing orb adoption on teams that don't need them.
+
 ## Why This Policy Exists
 
-The `team-config` orb is essential because it:
+The `team-config` orb is essential for teams using orbs because it:
 
 - **Provides Overrides**: Allows teams to customize build/test jobs while maintaining platform standards
 - **Enables Governance**: Platform team controls security and deployment jobs
@@ -170,15 +211,6 @@ This policy works with your existing platform setup:
 - **Config Templates**: Platform templates already include `team-config` orb
 - **URL Orbs**: Teams reference their own `team-config.yml` via URL orbs
 - **Override Mechanism**: Teams can override specific jobs while maintaining platform compliance
-
-## Policy Behavior
-
-This policy is configured as a **soft warning** policy, meaning:
-
-1. Violations generate warnings but do not block builds
-2. Teams can see the warnings in their CircleCI UI
-3. Platform team can monitor compliance without disrupting development
-4. Builds continue to run even when policy conditions are not met
 
 ## Troubleshooting
 

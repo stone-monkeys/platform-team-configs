@@ -1,6 +1,6 @@
 # Test for team-config orb requirement policy
 test_team_config_orb_policy:
-  # Test with valid configuration that includes team-config orb
+  # Test with minimal configuration 
   input:
     version: 2.1
     jobs:
@@ -9,18 +9,24 @@ test_team_config_orb_policy:
           - image: cimg/base:stable
   decision: &root_decision
     status: PASS
+    enabled_rules: [team_config_invalid_url, team_config_missing]
   
   cases:
     # Test with valid team-config orb (correct URL format)
     valid_team_config:
       input:
+        version: 2.1
         orbs:
           team-config: "https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/team-config.yml"
           docker: circleci/docker@2.8.2
+        jobs:
+          build:
+            docker:
+              - image: cimg/base:stable
       decision:
         <<: *root_decision
-        status: PASS
-    # Test with missing team-config orb (policy disabled)
+    
+    # Test with missing team-config orb
     missing_team_config_orb:
       input:
         version: 2.1
@@ -32,41 +38,42 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled
+        status: SOFT_FAIL
+        enabled_rules: [team_config_invalid_url, team_config_missing]
+        soft_failures:
+          - rule: team_config_missing
+            reason: "Configuration should include a 'team-config' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is recommended for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
-    # Test with no orbs section at all (policy disabled)
-    no_orbs_section:
+    # Test with team-config orb only
+    team_config_only:
       input:
         version: 2.1
+        orbs:
+          team-config: "https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/team-config.yml"
         jobs:
           build:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled
-    
-    # Test with team-config orb only
-    team_config_only:
-      input:
-        orbs:
-          team-config: "https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/team-config.yml"
-      decision:
         <<: *root_decision
-        status: PASS
     
     # Test with team-config and multiple other orbs
     team_config_with_others:
       input:
+        version: 2.1
         orbs:
           team-config: "https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/team-config.yml"
           docker: circleci/docker@2.8.2
           python: circleci/python@3.1.0
           node: circleci/node@5.0.0
+        jobs:
+          build:
+            docker:
+              - image: cimg/base:stable
       decision:
         <<: *root_decision
-        status: PASS
     
-    # Test with empty orbs section (policy disabled)
+    # Test with empty orbs section
     empty_orbs_section:
       input:
         version: 2.1
@@ -76,9 +83,13 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled
+        status: SOFT_FAIL
+        enabled_rules: [team_config_invalid_url, team_config_missing]
+        soft_failures:
+          - rule: team_config_missing
+            reason: "Configuration should include a 'team-config' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is recommended for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
-    # Test with team-config orb but wrong URL format (policy disabled)
+    # Test with team-config orb but wrong URL format
     invalid_team_config_url:
       input:
         version: 2.1
@@ -90,9 +101,13 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled
+        status: SOFT_FAIL
+        enabled_rules: [team_config_invalid_url, team_config_missing]
+        soft_failures:
+          - rule: team_config_invalid_url
+            reason: "The 'team-config' orb URL 'https://example.com/wrong-path/config.yml' should end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
-    # Test with team-config orb with wrong filename (policy disabled)
+    # Test with team-config orb with wrong filename
     wrong_filename:
       input:
         version: 2.1
@@ -104,7 +119,11 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled
+        status: SOFT_FAIL
+        enabled_rules: [team_config_invalid_url, team_config_missing]
+        soft_failures:
+          - rule: team_config_invalid_url
+            reason: "The 'team-config' orb URL 'https://raw.githubusercontent.com/my-org/my-repo/main/.circleci/config.yml' should end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md"
     
     # Test excluded project without team-config orb - should pass
     excluded_project_no_orb:
@@ -119,4 +138,4 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Policy is disabled 
+        <<: *root_decision 
