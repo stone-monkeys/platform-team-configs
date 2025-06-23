@@ -1,9 +1,13 @@
 package org
 
-# Policy name for CircleCI
-policy_name["python_minimum_version"]
+# DEBUG VERSION - Policy name for CircleCI
+policy_name["python_minimum_version_debug"]
 
-# Enable this rule for soft warnings (warnings only, builds continue)
+# Enable debug rules
+enable_rule["debug_input_structure"]
+enable_rule["debug_jobs_found"]
+enable_rule["debug_docker_configs"]
+enable_rule["debug_version_extraction"]
 enable_rule["python_minimum_version"]
 
 # Minimum required Python version
@@ -79,6 +83,70 @@ version_less_than(version1, version2) {
     v1[2] < v2[2]
 }
 
+# Debug rule: Show input structure
+debug_input_structure[msg] {
+    msg := sprintf("DEBUG: Input structure - compiled exists: %v, regular jobs exist: %v", [
+        input.compiled != null,
+        input.jobs != null
+    ])
+}
+
+# Debug rule: Show what jobs are found
+debug_jobs_found[msg] {
+    input.compiled
+    job_names := [name | input.compiled.jobs[name]]
+    msg := sprintf("DEBUG: Found compiled jobs: %v", [job_names])
+}
+
+debug_jobs_found[msg] {
+    not input.compiled
+    input.jobs
+    job_names := [name | input.jobs[name]]
+    msg := sprintf("DEBUG: Found regular jobs: %v", [job_names])
+}
+
+# Debug rule: Show docker configurations found
+debug_docker_configs[msg] {
+    input.compiled
+    some job_name
+    job := input.compiled.jobs[job_name]
+    job.docker
+    docker_images := [config.image | config := job.docker[_]]
+    msg := sprintf("DEBUG: Job '%s' docker images: %v", [job_name, docker_images])
+}
+
+debug_docker_configs[msg] {
+    not input.compiled
+    input.jobs
+    some job_name
+    job := input.jobs[job_name]
+    job.docker
+    docker_images := [config.image | config := job.docker[_]]
+    msg := sprintf("DEBUG: Job '%s' docker images: %v", [job_name, docker_images])
+}
+
+# Debug rule: Show version extraction results
+debug_version_extraction[msg] {
+    input.compiled
+    some job_name
+    job := input.compiled.jobs[job_name]
+    docker_config := job.docker[_]
+    startswith(docker_config.image, "cimg/python:")
+    python_version := extract_version(docker_config.image)
+    msg := sprintf("DEBUG: Job '%s' image '%s' extracted version: '%s'", [job_name, docker_config.image, python_version])
+}
+
+debug_version_extraction[msg] {
+    not input.compiled
+    input.jobs
+    some job_name
+    job := input.jobs[job_name]
+    docker_config := job.docker[_]
+    startswith(docker_config.image, "cimg/python:")
+    python_version := extract_version(docker_config.image)
+    msg := sprintf("DEBUG: Job '%s' image '%s' extracted version: '%s'", [job_name, docker_config.image, python_version])
+}
+
 # Soft warning rule for Python versions below minimum - check compiled jobs first
 python_minimum_version[msg] {
     # Skip if this project is excluded
@@ -98,4 +166,4 @@ python_minimum_version[msg] {
     version_less_than(python_version, minimum_python_version)
     
     msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Please update to cimg/python:%s or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version, minimum_python_version])
-}
+} 
