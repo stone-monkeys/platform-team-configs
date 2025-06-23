@@ -70,10 +70,6 @@ policies/
 │   ├── python-minimum-version.rego     # Policy logic (OPA/Rego)
 │   ├── python-minimum-version_test.yaml # Comprehensive test cases
 │   └── README.md                        # Policy documentation
-└── orb-requirements/               # Required orb enforcement  
-    ├── team-config-required.rego       # Policy logic (OPA/Rego)
-    ├── team-config-required_test.yaml  # Comprehensive test cases
-    └── README.md                        # Policy documentation
 ```
 
 #### **Active Policies**
@@ -83,15 +79,9 @@ policies/
    - **Enforcement**: Soft warnings (builds continue but notify teams)
    - **Scope**: Only applies to Python-based projects using CircleCI convenience images
 
-2. **Team-Config Orb Policy** (`team_config_required`)
-   - **Purpose**: Ensures all configurations include the required `team-config` orb
-   - **URL Validation**: Enforces that orb URLs end with `.circleci/team-config.yml`
-   - **Enforcement**: Hard violations (blocks builds) for missing/invalid orbs
-   - **Scope**: All CircleCI configurations organization-wide
-
 #### **Policy Management Workflow**
 
-- **Automated Testing**: All policies include comprehensive test suites with 15+ test cases
+- **Automated Testing**: All policies include comprehensive test suites with extensive test cases
 - **CI/CD Pipeline**: Dedicated pipeline (`.circleci/config-policies.yml`) for policy management
 - **Path Filtering**: Only runs when `policies/` directory changes (efficient)
 - **Manual Triggers**: Can be triggered from CircleCI UI for testing and deployment
@@ -143,13 +133,9 @@ terraform/
   ├── deprovision.yml              # Separate pipeline for resource cleanup
   └── config-policies.yml          # Policy management CI/CD pipeline
 policies/                          # CircleCI Config Policies (OPA/Rego)
-  ├── python-version/              # Python version enforcement policy
-  │   ├── python-minimum-version.rego
-  │   ├── python-minimum-version_test.yaml
-  │   └── README.md
-  └── orb-requirements/            # Required orb enforcement policy
-      ├── team-config-required.rego
-      ├── team-config-required_test.yaml
+  └── python-version/              # Python version enforcement policy
+      ├── python-minimum-version.rego
+      ├── python-minimum-version_test.yaml
       └── README.md
 docs/
   ├── best-practices.md            # CI/CD best practices
@@ -195,7 +181,7 @@ orbs:
 - **Environment Configuration**: Sets up all necessary environment variables and secrets
 
 ### Config Policy Management
-- **Policy Development**: OPA/Rego policies with comprehensive test coverage (15+ test cases)
+- **Policy Development**: OPA/Rego policies with comprehensive test coverage
 - **Automated Testing**: Dedicated CI/CD pipeline with JUnit integration
 - **Manual Controls**: UI-triggered testing, deployment, and policy enable/disable
 - **Path Filtering**: Efficient pipeline execution only when policies change

@@ -5,9 +5,8 @@ This directory contains Open Policy Agent (OPA) policies written in Rego that en
 ## Policy Structure
 
 - `python-version/` - Policies related to Python Docker image versions
-- `orb-requirements/` - Policies for required orbs and orb usage
-- `security/` - Security-related policies
-- `resources/` - Resource usage and limits policies
+- `security/` - Security-related policies (future)
+- `resources/` - Resource usage and limits policies (future)
 
 ## Policy Types
 
