@@ -86,7 +86,7 @@ python_minimum_version[msg] {
     
     # Check all jobs in the configuration
     some job_name
-    job := input.jobs[job_name]
+    job := input.compiled.jobs[job_name]
     
     # Check each docker image in the job
     docker_config := job.docker[_]
