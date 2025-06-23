@@ -92,7 +92,7 @@ version_less_than(version1, version2) {
 # Debug rule: Show input structure
 debug_input_structure[msg] {
     msg := sprintf("DEBUG: Input structure - compiled exists: %v, regular jobs exist: %v", [
-        input.compiled != null,
+        input._compiled_ != null,
         input.jobs != null
     ])
 }
