@@ -84,7 +84,31 @@ python_minimum_version[msg] {
     # Skip if this project is excluded
     not is_project_excluded
     
-    # Check all jobs in the compiled configuration
+    # Check all jobs in the compiled configuration (try _compiled_ first for real CircleCI)
+    some job_name
+    job := input._compiled_.jobs[job_name]
+    
+    # Check each docker image in the job
+    docker_config := job.docker[_]
+    
+    # Extract version from cimg/python images
+    python_version := extract_version(docker_config.image)
+    
+    # Check if version is below minimum
+    version_less_than(python_version, minimum_python_version)
+    
+    msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Please update to cimg/python:%s or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version, minimum_python_version])
+}
+
+# Fallback rule for test environments that use 'compiled' instead of '_compiled_'
+python_minimum_version[msg] {
+    # Skip if this project is excluded
+    not is_project_excluded
+    
+    # Only use this fallback if _compiled_ doesn't exist
+    not input._compiled_
+    
+    # Check all jobs in the compiled configuration (test format)
     some job_name
     job := input.compiled.jobs[job_name]
     
