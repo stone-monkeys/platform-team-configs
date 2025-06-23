@@ -3,7 +3,7 @@ package org
 # Policy name for CircleCI
 policy_name["python_minimum_version"]
 
-# Enable this rule for all configurations
+# Enable this rule for soft warnings (warnings only, builds continue)
 enable_rule["python_minimum_version"]
 
 # Minimum required Python version
@@ -79,8 +79,8 @@ version_less_than(version1, version2) {
     v1[2] < v2[2]
 }
 
-# Soft warning for Python versions below minimum
-warnings[msg] {
+# Soft warning rule for Python versions below minimum
+python_minimum_version[msg] {
     # Skip if this project is excluded
     not is_project_excluded
     

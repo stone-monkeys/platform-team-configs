@@ -15,7 +15,7 @@ test_python_version_policy:
     enabled_rules: [python_minimum_version]
   
   cases:
-    # Test with Python version below minimum - should generate warnings
+    # Test with Python version below minimum - should generate soft failures
     python_version_too_low:
       input:
         jobs:
@@ -23,11 +23,11 @@ test_python_version_policy:
             docker:
               - image: cimg/python:3.13.4
       decision:
-        <<: *root_decision
-        status: PASS  # Warnings don't fail the build
-        # Note: For warnings, we expect status: PASS but the policy will generate warnings
-        # CircleCI's test framework doesn't directly test warnings in the decision object
-        # Warnings are handled separately from hard failures
+        status: SOFT_FAIL
+        enabled_rules: [python_minimum_version]
+        soft_failures:
+          - rule: python_minimum_version
+            reason: "Job 'build' uses Python version 3.13.4 which is below the minimum required version 3.13.5. Please update to cimg/python:3.13.5 or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md"
     
     # Test with much older Python version
     python_version_very_old:
@@ -40,8 +40,13 @@ test_python_version_policy:
             docker:
               - image: cimg/python:3.11.5
       decision:
-        <<: *root_decision
-        status: PASS  # Still passes because it's a warning policy
+        status: SOFT_FAIL
+        enabled_rules: [python_minimum_version]
+        soft_failures:
+          - rule: python_minimum_version
+            reason: "Job 'build' uses Python version 3.12.0 which is below the minimum required version 3.13.5. Please update to cimg/python:3.13.5 or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md"
+          - rule: python_minimum_version
+            reason: "Job 'test' uses Python version 3.11.5 which is below the minimum required version 3.13.5. Please update to cimg/python:3.13.5 or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md"
     
     # Test with non-Python images - should be ignored
     non_python_images:
@@ -63,7 +68,7 @@ test_python_version_policy:
         jobs:
           python_job:
             docker:
-              - image: cimg/python:3.13.4  # Should warn
+              - image: cimg/python:3.13.4  # Should soft fail
           node_job:
             docker:
               - image: cimg/node:20.11     # Should ignore
@@ -71,8 +76,11 @@ test_python_version_policy:
             docker:
               - image: cimg/python:3.13.5  # Should pass
       decision:
-        <<: *root_decision
-        status: PASS
+        status: SOFT_FAIL
+        enabled_rules: [python_minimum_version]
+        soft_failures:
+          - rule: python_minimum_version
+            reason: "Job 'python_job' uses Python version 3.13.4 which is below the minimum required version 3.13.5. Please update to cimg/python:3.13.5 or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md"
     
     # Test with no jobs - should pass
     no_jobs:
