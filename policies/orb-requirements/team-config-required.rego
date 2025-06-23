@@ -4,7 +4,7 @@ package org
 policy_name["team_config_required"]
 
 # Enable this rule for all configurations
-enable_rule["team_config_required"]
+#enable_rule["team_config_required"]
 
 # Required orb name
 required_orb_name := "team-config"
@@ -48,42 +48,42 @@ has_valid_team_config_url {
     endswith(orb_url, ".circleci/team-config.yml")
 }
 
-# Warning for missing team-config orb
-warnings[msg] {
-    # Skip if this project is excluded
-    not is_project_excluded
-    
-    # Only check if orbs section exists
-    input.orbs
-    
-    # But team-config orb is missing
-    not has_team_config_orb
-    
-    msg := sprintf("Configuration should include a '%s' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is recommended for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name])
-}
+# Warning for missing team-config orb (DISABLED)
+# warnings[msg] {
+#     # Skip if this project is excluded
+#     not is_project_excluded
+#     
+#     # Only check if orbs section exists
+#     input.orbs
+#     
+#     # But team-config orb is missing
+#     not has_team_config_orb
+#     
+#     msg := sprintf("Configuration should include a '%s' orb that references '.circleci/team-config.yml'. This orb provides platform-managed overrides and is recommended for all projects. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name])
+# }
 
-# Warning for invalid team-config orb URL
-warnings[msg] {
-    # Skip if this project is excluded
-    not is_project_excluded
-    
-    # team-config orb exists
-    has_team_config_orb
-    
-    # But URL doesn't follow the convention
-    not has_valid_team_config_url
-    
-    orb_url := input.orbs[required_orb_name]
-    msg := sprintf("The '%s' orb URL '%s' should end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name, orb_url])
-}
+# Warning for invalid team-config orb URL (DISABLED)
+# warnings[msg] {
+#     # Skip if this project is excluded
+#     not is_project_excluded
+#     
+#     # team-config orb exists
+#     has_team_config_orb
+#     
+#     # But URL doesn't follow the convention
+#     not has_valid_team_config_url
+#     
+#     orb_url := input.orbs[required_orb_name]
+#     msg := sprintf("The '%s' orb URL '%s' should end with '.circleci/team-config.yml' to follow platform conventions. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name, orb_url])
+# }
 
-# Warning for configurations without any orbs section
-warnings[msg] {
-    # Skip if this project is excluded
-    not is_project_excluded
-    
-    # No orbs section at all
-    not input.orbs
-    
-    msg := sprintf("Configuration should include an 'orbs' section with the required '%s' orb. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name])
-} 
+# Warning for configurations without any orbs section (DISABLED)
+# warnings[msg] {
+#     # Skip if this project is excluded
+#     not is_project_excluded
+#     
+#     # No orbs section at all
+#     not input.orbs
+#     
+#     msg := sprintf("Configuration should include an 'orbs' section with the required '%s' orb. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/orb-requirements/README.md", [required_orb_name])
+# } 

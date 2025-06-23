@@ -9,7 +9,6 @@ test_team_config_orb_policy:
           - image: cimg/base:stable
   decision: &root_decision
     status: PASS
-    enabled_rules: [team_config_required]
   
   cases:
     # Test with valid team-config orb (correct URL format)
@@ -21,7 +20,7 @@ test_team_config_orb_policy:
       decision:
         <<: *root_decision
         status: PASS
-    # Test with missing team-config orb (should warn)
+    # Test with missing team-config orb (policy disabled)
     missing_team_config_orb:
       input:
         version: 2.1
@@ -33,10 +32,9 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Warnings don't fail the build
-        enabled_rules: [team_config_required]
+        status: PASS  # Policy is disabled
     
-    # Test with no orbs section at all (should warn)
+    # Test with no orbs section at all (policy disabled)
     no_orbs_section:
       input:
         version: 2.1
@@ -45,8 +43,7 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Warnings don't fail the build
-        enabled_rules: [team_config_required]
+        status: PASS  # Policy is disabled
     
     # Test with team-config orb only
     team_config_only:
@@ -69,7 +66,7 @@ test_team_config_orb_policy:
         <<: *root_decision
         status: PASS
     
-    # Test with empty orbs section (should warn)
+    # Test with empty orbs section (policy disabled)
     empty_orbs_section:
       input:
         version: 2.1
@@ -79,10 +76,9 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Warnings don't fail the build
-        enabled_rules: [team_config_required]
+        status: PASS  # Policy is disabled
     
-    # Test with team-config orb but wrong URL format (should warn)
+    # Test with team-config orb but wrong URL format (policy disabled)
     invalid_team_config_url:
       input:
         version: 2.1
@@ -94,10 +90,9 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Warnings don't fail the build
-        enabled_rules: [team_config_required]
+        status: PASS  # Policy is disabled
     
-    # Test with team-config orb with wrong filename (should warn)
+    # Test with team-config orb with wrong filename (policy disabled)
     wrong_filename:
       input:
         version: 2.1
@@ -109,8 +104,7 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS  # Warnings don't fail the build
-        enabled_rules: [team_config_required]
+        status: PASS  # Policy is disabled
     
     # Test excluded project without team-config orb - should pass
     excluded_project_no_orb:
@@ -125,5 +119,4 @@ test_team_config_orb_policy:
             docker:
               - image: cimg/base:stable
       decision:
-        status: PASS
-        enabled_rules: [team_config_required] 
+        status: PASS  # Policy is disabled 

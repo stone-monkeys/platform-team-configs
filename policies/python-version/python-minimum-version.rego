@@ -3,6 +3,9 @@ package org
 # Policy name for CircleCI
 policy_name["python_minimum_version"]
 
+# Enable this rule for all configurations
+enable_rule["python_minimum_version"]
+
 # Minimum required Python version
 minimum_python_version := "3.13.5"
 
@@ -96,17 +99,3 @@ warnings[msg] {
     
     msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Please update to cimg/python:%s or higher. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version, minimum_python_version])
 }
-
-# Hard violation - currently disabled, but can be enabled by changing to violations[msg]
-# violations[msg] {
-#     some job_name
-#     job := input.jobs[job_name]
-#     
-#     docker_config := job.docker[_]
-#     
-#     python_version := extract_version(docker_config.image)
-#     
-#     version_less_than(python_version, minimum_python_version)
-#     
-#     msg := sprintf("Job '%s' uses Python version %s which is below the minimum required version %s. Build blocked. For help, contact the Platform team or see https://github.com/CircleCI-Labs/platform-team-configs/blob/main/policies/python-version/README.md", [job_name, python_version, minimum_python_version])
-# } 

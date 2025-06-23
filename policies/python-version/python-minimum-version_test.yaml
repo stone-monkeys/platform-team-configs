@@ -12,6 +12,7 @@ test_python_version_policy:
           - image: cimg/python:3.14.0
   decision: &root_decision
     status: PASS
+    enabled_rules: [python_minimum_version]
   
   cases:
     # Test with Python version below minimum - should generate warnings
