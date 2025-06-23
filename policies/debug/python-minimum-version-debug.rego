@@ -6,8 +6,11 @@ policy_name["python_minimum_version_debug"]
 # Enable debug rules
 enable_rule["debug_input_structure"]
 enable_rule["debug_jobs_found"]
+enable_rule["debug_jobs_found_compiled"]
 enable_rule["debug_docker_configs"]
+enable_rule["debug_docker_configs_compiled"]
 enable_rule["debug_version_extraction"]
+enable_rule["debug_version_extraction_compiled"]
 enable_rule["python_minimum_version"]
 
 # Minimum required Python version
@@ -92,10 +95,10 @@ debug_input_structure[msg] {
 }
 
 # Debug rule: Show what jobs are found
-debug_jobs_found[msg] {
+debug_jobs_found_compiled[msg] {
     input.compiled
     job_names := [name | input.compiled.jobs[name]]
-    msg := sprintf("DEBUG: Found compiled jobs: %v", [job_names])
+    msg := sprintf("DEBUG COMPILED: Found compiled jobs: %v", [job_names])
 }
 
 debug_jobs_found[msg] {
@@ -106,13 +109,13 @@ debug_jobs_found[msg] {
 }
 
 # Debug rule: Show docker configurations found
-debug_docker_configs[msg] {
+debug_docker_configs_compiled[msg] {
     input.compiled
     some job_name
     job := input.compiled.jobs[job_name]
     job.docker
     docker_images := [config.image | config := job.docker[_]]
-    msg := sprintf("DEBUG: Job '%s' docker images: %v", [job_name, docker_images])
+    msg := sprintf("DEBUG COMPILED: Job '%s' docker images: %v", [job_name, docker_images])
 }
 
 debug_docker_configs[msg] {
@@ -126,14 +129,14 @@ debug_docker_configs[msg] {
 }
 
 # Debug rule: Show version extraction results
-debug_version_extraction[msg] {
+debug_version_extraction_compiled[msg] {
     input.compiled
     some job_name
     job := input.compiled.jobs[job_name]
     docker_config := job.docker[_]
     startswith(docker_config.image, "cimg/python:")
     python_version := extract_version(docker_config.image)
-    msg := sprintf("DEBUG: Job '%s' image '%s' extracted version: '%s'", [job_name, docker_config.image, python_version])
+    msg := sprintf("DEBUG COMPILED: Job '%s' image '%s' extracted version: '%s'", [job_name, docker_config.image, python_version])
 }
 
 debug_version_extraction[msg] {
