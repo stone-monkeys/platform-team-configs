@@ -106,13 +106,13 @@ debug_input_jobs[msg] {
 
 # Debug rule: Show what jobs are found
 debug_jobs_found_compiled[msg] {
-    input.compiled
-    job_names := [name | input.compiled.jobs[name]]
+    input._compiled_
+    job_names := [name | input._compiled_.jobs[name]]
     msg := sprintf("DEBUG COMPILED: Found compiled jobs: %v", [job_names])
 }
 
 debug_jobs_found[msg] {
-    not input.compiled
+    not input._compiled_
     input.jobs
     job_names := [name | input.jobs[name]]
     msg := sprintf("DEBUG: Found regular jobs: %v", [job_names])
@@ -120,16 +120,16 @@ debug_jobs_found[msg] {
 
 # Debug rule: Show docker configurations found
 debug_docker_configs_compiled[msg] {
-    input.compiled
+    input._compiled_
     some job_name
-    job := input.compiled.jobs[job_name]
+    job := input._compiled_.jobs[job_name]
     job.docker
     docker_images := [config.image | config := job.docker[_]]
     msg := sprintf("DEBUG COMPILED: Job '%s' docker images: %v", [job_name, docker_images])
 }
 
 debug_docker_configs[msg] {
-    not input.compiled
+    not input._compiled_
     input.jobs
     some job_name
     job := input.jobs[job_name]
@@ -140,9 +140,9 @@ debug_docker_configs[msg] {
 
 # Debug rule: Show version extraction results
 debug_version_extraction_compiled[msg] {
-    input.compiled
+    input._compiled_
     some job_name
-    job := input.compiled.jobs[job_name]
+    job := input._compiled_.jobs[job_name]
     docker_config := job.docker[_]
     startswith(docker_config.image, "cimg/python:")
     python_version := extract_version(docker_config.image)
@@ -150,7 +150,7 @@ debug_version_extraction_compiled[msg] {
 }
 
 debug_version_extraction[msg] {
-    not input.compiled
+    not input._compiled_
     input.jobs
     some job_name
     job := input.jobs[job_name]
@@ -167,7 +167,7 @@ python_minimum_version[msg] {
     
     # Check all jobs in the compiled configuration
     some job_name
-    job := input.compiled.jobs[job_name]
+    job := input._compiled_.jobs[job_name]
     
     # Check each docker image in the job
     docker_config := job.docker[_]
