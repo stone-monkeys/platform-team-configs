@@ -10,7 +10,7 @@ test_python_version_policy:
       test:
         docker:
           - image: cimg/python:3.14.0
-    compiled:
+    _compiled_:
       jobs:
         build:
           docker:
@@ -30,7 +30,7 @@ test_python_version_policy:
           build:
             docker:
               - image: cimg/python:3.13.4
-        compiled:
+        _compiled_:
           jobs:
             build:
               docker:
@@ -52,7 +52,7 @@ test_python_version_policy:
           test:
             docker:
               - image: cimg/python:3.11.5
-        compiled:
+        _compiled_:
           jobs:
             build:
               docker:
@@ -79,7 +79,7 @@ test_python_version_policy:
           test:
             docker:
               - image: cimg/base:stable
-        compiled:
+        _compiled_:
           jobs:
             build:
               docker:
@@ -104,7 +104,7 @@ test_python_version_policy:
           valid_python_job:
             docker:
               - image: cimg/python:3.13.5  # Should pass
-        compiled:
+        _compiled_:
           jobs:
             python_job:
               docker:
@@ -141,7 +141,7 @@ test_python_version_policy:
           build:
             docker:
               - image: cimg/python:3.11.0
-        compiled:
+        _compiled_:
           jobs:
             build:
               docker:
