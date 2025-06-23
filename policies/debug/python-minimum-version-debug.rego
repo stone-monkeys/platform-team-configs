@@ -1,4 +1,6 @@
 package org
+import future.keywords
+
 
 # DEBUG VERSION - Policy name for CircleCI
 policy_name["python_minimum_version_debug"]
@@ -12,6 +14,7 @@ enable_rule["debug_docker_configs_compiled"]
 enable_rule["debug_version_extraction"]
 enable_rule["debug_version_extraction_compiled"]
 enable_rule["python_minimum_version"]
+enable_rule["debug_input_jobs"]
 
 # Minimum required Python version
 minimum_python_version := "3.13.5"
@@ -90,6 +93,13 @@ version_less_than(version1, version2) {
 debug_input_structure[msg] {
     msg := sprintf("DEBUG: Input structure - compiled exists: %v, regular jobs exist: %v", [
         input.compiled != null,
+        input.jobs != null
+    ])
+}
+
+debug_input_jobs[msg] {
+    msg := sprintf("DEBUG: Input structure - raw config exists: %v, regular jobs exist: %v", [
+        input != null,
         input.jobs != null
     ])
 }
