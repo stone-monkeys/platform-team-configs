@@ -3,8 +3,8 @@
 ## For Platform Team
 - Use reusable jobs and commands to keep configs DRY.
 - Validate all configs with the CircleCI CLI before merging.
-- Use orbs for common tasks and maintain them in the `orbs/` directory.
-- Document all changes and new patterns in the `docs/` folder.
+- Use orbs for common tasks and maintain them in the orbs/ directory.
+- Document all changes and new patterns in the docs/ folder.
 - Provide sensible defaults but allow for overrides.
 - Regularly review and update templates for security and efficiency.
 
@@ -14,4 +14,16 @@
 - Validate your config after overrides using the CircleCI CLI.
 - Do not commit secrets or sensitive data to configs.
 - Follow naming conventions and keep job steps clear and concise.
-- Reach out to the Platform Team for support or questions. 
+- Reach out to the Platform Team for support or questions.
+- Clone the repo locally to start work
+
+- Install the CircleCI VS Code extension to:
+  - Get inline config validation and linting
+  - View pipelines without leaving the editor
+
+- Your developers can then leverage the MCP Server from within the IDE:
+  - Retrieves detailed failure logs from CircleCI builds
+  - You can execute and test config changes directly from your dev environment
+  - Makes iterating on pipelines fast
+  - You can find flaky tests
+  - You can get the latest pipeline status
