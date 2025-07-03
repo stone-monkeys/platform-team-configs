@@ -309,8 +309,8 @@ In order to setup Centralized Config Management and the relevant triggers, we mu
 
 The Platform team will then need to decide how they will trigger the provisioning pipelines:
     
-    1. If the team is leveraging a IDP, they will configure an custom webhook in the triggers section in CircleCI. In our example you can see our custom webooks from Cortex and from Port 
-    2. If the team is triggering the provision and deprovision pipelines from the CircleCI UI, additional configuration will be requred to pass the correct environment variables
+1. If the team is leveraging a IDP, they will configure an custom webhook in the triggers section in CircleCI. In our example you can see our custom webooks from Cortex and from Port 
+2. If the team is triggering the provision and deprovision pipelines from the CircleCI UI, additional configuration will be requred to pass the correct environment variables
 
 ## Contributing
 
