@@ -8,6 +8,9 @@ commands:
       provider_version:
         type: string
         default: "0.0.1"
+      commit_sha:
+        type: string
+        default: "HEAD"
     steps:
       - run:
           name: Export provider version and path
@@ -21,9 +24,22 @@ commands:
           name: Clone Terraform Provider Repo and Write Commit SHA
           command: |
             mkdir -p "$PROVIDER_PATH"
-            git clone --depth 1 https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
+            
+            # Clone the full repository to access any commit
+            git clone https://github.com/CircleCI-Public/terraform-provider-circleci.git /tmp/terraform-provider-circleci
             cd /tmp/terraform-provider-circleci
+            
+            # Checkout specific commit if provided (and not HEAD)
+            if [ "<< parameters.commit_sha >>" != "HEAD" ]; then
+              echo "Checking out commit << parameters.commit_sha >>..."
+              git checkout << parameters.commit_sha >>
+            else
+              echo "Using latest commit (HEAD)"
+            fi
+            
+            # Get the actual commit SHA for caching
             git rev-parse HEAD > /tmp/terraform-provider-circleci.txt
+            echo "Using commit SHA: $(cat /tmp/terraform-provider-circleci.txt)"
       - restore_cache:
           keys:
             - terraform-provider-circleci-{{ checksum "/tmp/terraform-provider-circleci.txt" }}
