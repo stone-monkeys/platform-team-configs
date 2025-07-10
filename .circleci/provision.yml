@@ -18,6 +18,7 @@ jobs:
       - platform-team/parse-webhook-payload
       - platform-team/build-terraform-provider-circleci:
           provider_version: "0.0.1"
+          commit_sha: "92808ad67ed663b767af230bce32c2ba25ead147"
       - platform-team/setup-tf-vars
       - aws-cli/setup:
           role_arn: "arn:aws:iam::${AWS_ACCOUNT_ID}:role/${AWS_IAM_PREFIX}-role"
