@@ -15,7 +15,7 @@
 - Do not commit secrets or sensitive data to configs.
 - Follow naming conventions and keep job steps clear and concise.
 - Reach out to the Platform Team for support or questions.
-- Clone the repo locally to start work
+- Clone the repository locally to start working on your project.
 
 - Install the CircleCI VS Code extension to:
   - Get inline config validation and linting
@@ -23,7 +23,7 @@
 
 - Your developers can then leverage the MCP Server from within the IDE:
   - Retrieves detailed failure logs from CircleCI builds
-  - You can execute and test config changes directly from your dev environment
-  - Makes iterating on pipelines fast
-  - You can find flaky tests
-  - You can get the latest pipeline status
+  - You can execute and test config changes directly from your development environment
+  - Makes iterating on pipelines fast and efficient
+  - You can find and identify flaky tests
+  - You can get the latest pipeline status and build information

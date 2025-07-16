@@ -15,5 +15,5 @@ workflows:
   remove-pr-label:
     jobs:
       - remove-label:
-          context: centralized-assest-github-envs
+          context: centralized-asset-github-envs
       

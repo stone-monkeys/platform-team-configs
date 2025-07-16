@@ -61,4 +61,4 @@ workflows:
     jobs:
       - configure-cci:
           context: 
-            - centralized-assest-github-envs
+            - centralized-asset-github-envs

@@ -26,7 +26,7 @@ variable "appteam_pipeline_profiles" {
     context_name         = optional(string, null)
     # Provided as type:value pairs
     context_restrictions = optional(map(string), {})
-    # reference the value ina  sensitive set defined below, otherwise we can't loop values.
+    # reference the value in a sensitive set defined below, otherwise we can't loop values.
     context_variables    = optional(set(string), [])
     template_owner       = optional(string, null)
   })

@@ -10,6 +10,14 @@ Welcome to the **Platform Team's centralized repository for CircleCI configurati
 - **Govern**: Enforce organizational standards and security requirements through automated config policies.
 - **Own**: Enable the Platform Team to take ownership of CI/CD and automation, while still empowering developers to customize as needed.
 
+## Disclaimer
+
+CircleCI Labs is a collection of solutions developed by members of CircleCI's Field Engineering team through our engagement with various customer needs. This repository is part of that collection.
+
+-   ✅ Created by engineers @ CircleCI
+-   ✅ Used by real CircleCI customers
+-   ❌ **not** officially supported by CircleCI support
+
 ## How It Works
 
 The Platform Team defines and maintains **CircleCI pipeline templates** in the `config-templates/` directory that establish the overall structure, workflow, and job orchestration for different technology stacks. These templates are then integrated into **GitHub template repositories** (e.g., `python-starter-template`, `java-starter-template`) that contain complete project boilerplate, company development standards, and CircleCI configuration overrides.
