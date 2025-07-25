@@ -11,9 +11,11 @@ parameters:
   template_repo:
     type: string
     description: "Template repository to use as base"
+    default: ""
   target_repo:
     type: string
     description: "Target repository where infrastructure will be provisioned"
+    default: ""
 
 jobs:
   configure-cci:
