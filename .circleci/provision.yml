@@ -118,11 +118,10 @@ workflows:
           context: 
             - centralized-asset-github-envs
 
-  provision-infrastructure-from-circleci:
+  provision-infrastructure-via-circleci:
     when:
       and:
-        - equal: [ manual, << pipeline.trigger_source >> ]
-        - << pipeline.parameters.template_repo >>
+        - equal: [ api, << pipeline.trigger_source >> ]
         - << pipeline.parameters.target_repo >>
     jobs:
       - configure-cci-from-ui:
