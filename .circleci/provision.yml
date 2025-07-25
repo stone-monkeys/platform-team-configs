@@ -36,7 +36,7 @@ jobs:
       - run:
           name: Generate backend config
           command: |
-            echo "key=\"fe-platform-demo/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
+            echo "key=\"platform-team-configs/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
       - terraform/apply:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
@@ -81,7 +81,7 @@ jobs:
       - run:
           name: Generate backend config
           command: |
-            echo "key=\"fe-platform-demo/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
+            echo "key=\"platform-team-configs/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
       - terraform/apply:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
@@ -118,17 +118,7 @@ workflows:
           context: 
             - centralized-asset-github-envs
 
-  provision-infrastructure-via-circleci:
-    when:
-      and:
-        - equal: [ api, << pipeline.trigger_source >> ]
-        - << pipeline.parameters.target_repo >>
-    jobs:
-      - configure-cci:
-          context: 
-            - centralized-asset-github-envs
-
-  provision-infrastructure-from-ui:
+  provision-infrastructure-from-circleci:
     when:
       and:
         - equal: [ manual, << pipeline.trigger_source >> ]
