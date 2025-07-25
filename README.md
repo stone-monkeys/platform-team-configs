@@ -104,19 +104,19 @@ policies/
 5. **Review & Merge**: Code review and merge to main branch
 6. **Automatic Deployment**: Policies are pushed to CircleCI organization
 
-### Automated Project Creation
+### Automated Project Creation (via IDP or CircleCI UI)
 
-1. **IDP Trigger**: Development teams request new projects through Internal Developer Portals (Port, Cortex, Backstage, etc.)
-2. **Webhook Processing**: IDP sends webhook to CircleCI with project specifications
-3. **Terraform Automation**: The platform automatically:
-   - Creates a new GitHub repository from the specified template repository
-   - Inherits the complete project structure, boilerplate code, and override-enabled CircleCI config
-   - Sets up CircleCI project and pipeline configuration
-   - Configures contexts and environment variables
-   - Applies project restrictions to existing contexts
-4. **Policy Enforcement**: All new projects are automatically subject to organization-wide config policies
-5. **Initial CI/CD Trigger**: An empty commit is automatically pushed to trigger the first CI/CD pipeline
-6. **Ready to Use**: Teams receive a fully configured repository with working CI/CD pipeline that follows platform standards but allows developer customization
+1. **Trigger:** Developers request new projects via an IDP, or trigger the workflow manually through the CircleCI UI.
+2. **Webhook Handling:** The IDP sends a webhook to CircleCI with the required project parameters.
+3. **Terraform Automation:** The platform automation performs the following:
+      - Creates a new GitHub repository using a predefined template
+      - Applies the full project scaffold including boilerplate code and override-friendly CircleCI config
+      - Configures the CircleCI project and pipeline settings
+      - Sets up required contexts and environment variables
+      - Enforces access restrictions and links the project to shared org-wide contexts
+4. **Policy Enforcement:** All new projects are automatically governed by organization-wide CircleCI config policies.
+5. **Initial CI/CD Trigger:** An empty commit is pushed automatically to trigger the first pipeline run.
+6. **Developer-Ready:** Teams receive a fully configured repository with a functional CI/CD pipeline that adheres to platform standards while allowing for project-specific customization.
 
 ### Template-Based Architecture
 - **Config Templates**: Platform-managed CircleCI pipeline definitions in `config-templates/`
