@@ -36,6 +36,8 @@ resource "circleci_project" "team_project" {
   name             = var.appteam_pipeline_profiles.application_name
   organization_id  = var.org_info.organization_id
   project_provider = var.org_info.project_provider
+  
+  depends_on = [github_repository.new_repo]
 }
 
 resource "circleci_context" "team_context" {
