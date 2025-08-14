@@ -15,7 +15,7 @@ variable "github_token" {
 variable "github_owner" {
   description = "GitHub organization or user for repo creation"
   type        = string
-  default     = "CircleCI-Labs"
+  default     = "stone-monkeys"
 }
 
 variable "appteam_pipeline_profiles" {
