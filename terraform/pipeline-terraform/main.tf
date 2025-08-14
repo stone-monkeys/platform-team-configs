@@ -51,6 +51,8 @@ resource "circleci_context_restriction" "context_restrictions" {
   context_id = circleci_context.team_context.id
   type       = each.key
   value      = (each.key == "project") ? circleci_project.team_project.id : var.context_restrictions[each.value]
+  
+  depends_on = [circleci_project.team_project]
 }
 
 resource "circleci_context_environment_variable" "team_variables" {
@@ -67,6 +69,8 @@ resource "circleci_context_restriction" "existing_context_project_restriction" {
   context_id = data.circleci_context.existing_context.id
   type       = "project"
   value      = circleci_project.team_project.id
+  
+  depends_on = [circleci_project.team_project]
 }
 
 resource "circleci_pipeline" "default" {
@@ -78,6 +82,8 @@ resource "circleci_pipeline" "default" {
   config_source_file_path          = local.config_path
   config_source_provider           = "github_app"
   config_source_repo_external_id   = data.github_repository.platform_configs_repo.repo_id
+  
+  depends_on = [circleci_project.team_project]
 }
 
 resource "circleci_trigger" "default" {
@@ -90,4 +96,6 @@ resource "circleci_trigger" "default" {
   event_preset                  = "all-pushes"
   config_ref                    = "main"
   checkout_ref                  = ""
+  
+  depends_on = [circleci_project.team_project]
 }
