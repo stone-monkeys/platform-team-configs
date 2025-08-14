@@ -24,7 +24,6 @@ locals {
 resource "github_repository" "new_repo" {
   name        = var.appteam_pipeline_profiles.application_name
   description = "Created from template"
-  visibility  = "internal"
 
   template {
     owner      = var.appteam_pipeline_profiles.template_owner
