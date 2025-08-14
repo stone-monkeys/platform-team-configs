@@ -68,6 +68,8 @@ jobs:
     environment:
       TEMPLATE_REPO: << pipeline.parameters.template_repo >>
       TARGET_REPO: << pipeline.parameters.target_repo >>
+      TF_LOG: TRACE
+      TF_LOG_PATH: /tmp/terraform.log
     steps:
       - checkout
       - platform-team/parse-webhook-payload
@@ -86,6 +88,13 @@ jobs:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
           var_file: app.tfvars
+      - run:
+          name: "Capture Terraform logs for debugging"
+          command: |
+            if [ -f /tmp/terraform.log ]; then
+              echo "=== TERRAFORM TRACE LOGS ==="
+              cat /tmp/terraform.log
+            fi
       - gh/setup
       - run:
           name: Trigger initial CI/CD pipeline with empty commit
