@@ -9,8 +9,7 @@ terraform {
   required_providers {
     circleci = {
       # currently depends on config.yml creation of ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64 directory containing binary
-      source  = "circleci.com/circleci/circleci"
-      #version = "0.1.1"
+      source = "circleci.com/circleci/circleci"
     }
     github = {
       source  = "integrations/github"
