@@ -27,7 +27,6 @@ jobs:
       - checkout
       - platform-team/parse-webhook-payload
       - platform-team/build-terraform-provider-circleci:
-          provider_version: "0.1.1"
           commit_sha: "9c6a2a863288845586fb6c526339ded0849f26a9"
       - platform-team/setup-tf-vars
       - aws-cli/setup:
@@ -74,7 +73,6 @@ jobs:
       - checkout
       - platform-team/parse-webhook-payload
       - platform-team/build-terraform-provider-circleci:
-          provider_version: "0.1.1"
           commit_sha: "9c6a2a863288845586fb6c526339ded0849f26a9"
       - platform-team/setup-tf-vars
       - aws-cli/setup:
