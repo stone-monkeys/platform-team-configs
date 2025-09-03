@@ -85,7 +85,6 @@ jobs:
       - terraform/init:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
-          var_file: app.tfvars
       - terraform/apply:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
