@@ -35,7 +35,6 @@ resource "circleci_project" "team_project" {
   #for_each = toset(var.appteam_pipeline_profiles)
   name             = var.appteam_pipeline_profiles.application_name
   organization_id  = var.org_info.organization_id
-  project_provider = "github"
   
   depends_on = [github_repository.new_repo]
 }
