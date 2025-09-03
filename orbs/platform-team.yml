@@ -7,7 +7,7 @@ commands:
     parameters:
       provider_version:
         type: string
-        default: "0.0.1"
+        default: "0.2.0"
       commit_sha:
         type: string
         default: "HEAD"
