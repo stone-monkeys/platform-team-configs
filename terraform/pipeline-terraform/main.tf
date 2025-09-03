@@ -10,7 +10,7 @@ data "github_repository" "platform_configs_repo" {
 
 # Data source to fetch existing CircleCI context
 data "circleci_context" "existing_context" {
-  id = "0731337b-c13e-402c-9159-4119e0240d19"
+  id = "8511746e-a5e5-43d2-bfb3-eb175d735c2c"
 }
 
 # Extract language from template name and construct config path
