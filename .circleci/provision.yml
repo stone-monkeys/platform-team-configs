@@ -82,7 +82,10 @@ jobs:
           name: Generate backend config
           command: |
             echo "key=\"platform-team-configs/port/${TARGET_REPO}.tfstate\"" > terraform/pipeline-terraform/backend.conf
-      - run: terraform init -upgrade
+      - terraform/init:
+          backend_config_file: backend.conf
+          path: terraform/pipeline-terraform
+          upgrade: true
       - terraform/apply:
           backend_config_file: backend.conf
           path: terraform/pipeline-terraform
