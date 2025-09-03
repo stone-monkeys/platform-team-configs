@@ -10,7 +10,7 @@ terraform {
     circleci = {
       # currently depends on config.yml creation of ~/.terraform.d/plugins/circleci.com/circleci/circleci/0.0.1/linux_amd64 directory containing binary
       source = "CircleCI-Public/circleci"
-      version = "0.1.1"
+      version = "0.2.0"
     }
     github = {
       source  = "integrations/github"
